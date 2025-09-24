@@ -1,3 +1,3 @@
--- name: GetJob :one
-SELECT * FROM jobs
-WHERE id = $1;
+-- name: InsertJob :exec
+INSERT INTO jobs (position, company)
+VALUES ($1, $2);
