@@ -16,15 +16,13 @@ func main() {
 	port, ok := os.LookupEnv("PORT")
 
 	if !ok {
-		log.Fatal("There is no server port defined")
-		os.Exit(1)
+		panic("There is no server port defined")
 	}
 
 	db, ok := os.LookupEnv("DB_URL")
 
 	if !ok {
-		log.Fatal("There is no Database URL")
-		os.Exit(1)
+		panic("There is no Database URL")
 	}
 
 	ctx := context.Background()
@@ -47,13 +45,11 @@ func main() {
 
 		var job respository.Job
 
-		err := decoder.Decode(&job)
-
-		if err != nil {
+		if err := decoder.Decode(&job); err != nil {
 			panic(err)
 		}
 
-		err = repo.InsertJob(ctx, respository.InsertJobParams{
+		j, err := repo.InsertJob(ctx, respository.InsertJobParams{
 			Position: job.Position,
 			Company:  job.Company,
 		})
@@ -63,14 +59,12 @@ func main() {
 		}
 
 		w.WriteHeader(201)
-		w.Write([]byte(job.Position + " at " + job.Company + " added."))
+		w.Write([]byte(j.Position + " at " + j.Company + " added."))
 	})
 
 	log.Println("server listening on PORT:" + port)
 
-	err = http.ListenAndServe(":"+port, mux)
-
-	if err != nil {
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}

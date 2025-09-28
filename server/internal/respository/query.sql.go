@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const insertJob = `-- name: InsertJob :exec
+const insertJob = `-- name: InsertJob :one
 INSERT INTO jobs (position, company)
 VALUES ($1, $2)
 RETURNING id, position, company
@@ -20,7 +20,9 @@ type InsertJobParams struct {
 	Company  string
 }
 
-func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) error {
-	_, err := q.db.Exec(ctx, insertJob, arg.Position, arg.Company)
-	return err
+func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, error) {
+	row := q.db.QueryRow(ctx, insertJob, arg.Position, arg.Company)
+	var i Job
+	err := row.Scan(&i.ID, &i.Position, &i.Company)
+	return i, err
 }
