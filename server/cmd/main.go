@@ -1,17 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-)
 
-type Job struct {
-	Position string `json:"position"`
-	Company  string `json:"company"`
-}
+	"github.com/jackc/pgx/v5"
+
+	"github.com/JesstinSwadley/job-tracker/internal/respository"
+)
 
 func main() {
 	port, ok := os.LookupEnv("PORT")
@@ -21,12 +20,32 @@ func main() {
 		os.Exit(1)
 	}
 
+	db, ok := os.LookupEnv("DB_URL")
+
+	if !ok {
+		log.Fatal("There is no Database URL")
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+
+	conn, err := pgx.Connect(context.Background(), db)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	defer conn.Close(ctx)
+
+	repo := respository.New(conn)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 
-		var job Job
+		var job respository.Job
 
 		err := decoder.Decode(&job)
 
@@ -34,12 +53,22 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Println("Job at " + job.Company + " for " + job.Position)
+		err = repo.InsertJob(ctx, respository.InsertJobParams{
+			Position: job.Position,
+			Company:  job.Company,
+		})
+
+		if err != nil {
+			panic(err)
+		}
+
+		w.WriteHeader(201)
+		w.Write([]byte(job.Position + " at " + job.Company + " added."))
 	})
 
 	log.Println("server listening on PORT:" + port)
 
-	err := http.ListenAndServe(":"+port, mux)
+	err = http.ListenAndServe(":"+port, mux)
 
 	if err != nil {
 		log.Fatal(err)
