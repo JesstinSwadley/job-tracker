@@ -29,13 +29,18 @@ const NewJobForm = () => {
 
 	return (
 		<>
-			<form onSubmit={handleSubmit}>
-				<div>
+			<form
+				className='shadow-md p-4 mx-4 flex-col' 
+				onSubmit={handleSubmit}>
+				<div
+					className='mb-5'>
 					<label 
+						className='block mb-2 text-sm'
 						htmlFor="positionInput">
 							<span>Position</span>
 					</label>
 					<input
+						className='block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm'
 						id="positionInput"
 						name="position"
 						placeholder="Web Developer"
@@ -43,12 +48,15 @@ const NewJobForm = () => {
 						required />
 				</div>
 
-				<div>
+				<div
+					className='mb-5'>
 					<label 
+						className='block mb-2 text-sm'
 						htmlFor="companyInput">
 							<span>Company</span>
 					</label>
 					<input
+						className='block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm'
 						id="companyInput"
 						name="company"
 						placeholder="Business LLC."
@@ -57,6 +65,7 @@ const NewJobForm = () => {
 				</div>
 
 				<button
+					className='mb-3 p-2 bg-blue-500 text-white rounded cursor-pointer'
 					type="submit">
 					<span>Add New Job</span>
 				</button>
