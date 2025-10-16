@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/cors"
 
 	"github.com/JesstinSwadley/job-tracker/internal/respository"
 )
@@ -64,7 +65,9 @@ func main() {
 
 	log.Println("server listening on PORT:" + port)
 
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	handler := cors.Default().Handler(mux)
+
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}

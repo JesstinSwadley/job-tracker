@@ -10,8 +10,8 @@ const NewJobForm = () => {
 		const form: HTMLFormElement = e.target as HTMLFormElement;
 		const formData: FormData = new FormData(form);
 
-		const position = formData.get("positionInput");
-		const company = formData.get("companyInput");
+		const position = formData.get("position");
+		const company = formData.get("company");
 
 		const response = await fetch(`${API_URL}/`, {
 			headers: {
