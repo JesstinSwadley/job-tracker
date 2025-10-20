@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -12,7 +11,7 @@ import (
 func NewJob(w http.ResponseWriter, r *http.Request) {
 	var job respository.Job
 
-	ctx := context.Background()
+	ctx := r.Context()
 	dbConn := database.DatabaseConnection()
 	repo := respository.New(dbConn)
 
@@ -33,4 +32,25 @@ func NewJob(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(201)
 	w.Write([]byte(j.Position + " at " + j.Company + " added."))
+}
+
+func GetListOfJobs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	dbConn := database.DatabaseConnection()
+	repo := respository.New(dbConn)
+
+	jobs, err := repo.ListJobs(ctx)
+
+	if err != nil {
+		panic(err)
+	}
+
+	jobsData, err := json.Marshal(jobs)
+
+	if err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(200)
+	w.Write(jobsData)
 }

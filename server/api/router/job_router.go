@@ -10,6 +10,7 @@ func JobRouter() *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.HandleFunc("POST /new", handler.NewJob)
+	router.HandleFunc("GET /list", handler.GetListOfJobs)
 
 	return router
 }

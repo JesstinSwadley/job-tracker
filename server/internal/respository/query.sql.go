@@ -26,3 +26,27 @@ func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, erro
 	err := row.Scan(&i.ID, &i.Position, &i.Company)
 	return i, err
 }
+
+const listJobs = `-- name: ListJobs :many
+SELECT id, position, company FROM jobs
+`
+
+func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
+	rows, err := q.db.Query(ctx, listJobs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Job
+	for rows.Next() {
+		var i Job
+		if err := rows.Scan(&i.ID, &i.Position, &i.Company); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
