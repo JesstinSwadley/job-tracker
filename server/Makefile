@@ -9,3 +9,6 @@ dev:
 
 test:
 	@go test -v ./...
+
+sqlgen:
+	@sqlc generate

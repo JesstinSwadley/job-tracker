@@ -54,3 +54,28 @@ func GetListOfJobs(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write(jobsData)
 }
+
+func UpdateJob(w http.ResponseWriter, r *http.Request) {
+	var job respository.Job
+
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&job); err != nil {
+		panic(err)
+	}
+
+	updateJob := respository.UpdateJobParams(job)
+
+	ctx := r.Context()
+	dbConn := database.DatabaseConnection()
+	repo := respository.New(dbConn)
+
+	err := repo.UpdateJob(ctx, updateJob)
+
+	if err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte("Job has been updated"))
+}

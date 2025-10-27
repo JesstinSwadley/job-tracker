@@ -50,3 +50,20 @@ func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
 	}
 	return items, nil
 }
+
+const updateJob = `-- name: UpdateJob :exec
+UPDATE jobs
+SET position = $2, company = $3
+WHERE id = $1
+`
+
+type UpdateJobParams struct {
+	ID       int32
+	Position string
+	Company  string
+}
+
+func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) error {
+	_, err := q.db.Exec(ctx, updateJob, arg.ID, arg.Position, arg.Company)
+	return err
+}

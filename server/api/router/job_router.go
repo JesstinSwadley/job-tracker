@@ -11,6 +11,7 @@ func JobRouter() *http.ServeMux {
 
 	router.HandleFunc("POST /new", handler.NewJob)
 	router.HandleFunc("GET /list", handler.GetListOfJobs)
+	router.HandleFunc("PATCH /update", handler.UpdateJob)
 
 	return router
 }
