@@ -28,7 +28,7 @@ func main() {
 	apiHandler := api.ApiRouter()
 
 	// CORS Handler
-	handler := cors.Default().Handler(apiHandler)
+	handler := cors.AllowAll().Handler(apiHandler)
 
 	// Server
 	log.Println("server listening on PORT:" + port)

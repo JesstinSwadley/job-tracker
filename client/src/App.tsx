@@ -1,5 +1,6 @@
 import JobTable from "./components/JobTable"
 import NewJobForm from "./components/NewJobForm"
+import UpdateJobForm from "./components/UpdateJobForm"
 
 function App() {
 	return (
@@ -13,6 +14,11 @@ function App() {
 				className="flex justify-center m-5">
 				<JobTable />
 			</section>
+
+			<section
+				className="flex justify-center m-5">
+				<UpdateJobForm />
+			</section>'
 		</>
 	)
 }
