@@ -9,6 +9,16 @@ import (
 	"context"
 )
 
+const deleteJob = `-- name: DeleteJob :exec
+DELETE FROM jobs
+WHERE id = $1
+`
+
+func (q *Queries) DeleteJob(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteJob, id)
+	return err
+}
+
 const insertJob = `-- name: InsertJob :one
 INSERT INTO jobs (position, company)
 VALUES ($1, $2)

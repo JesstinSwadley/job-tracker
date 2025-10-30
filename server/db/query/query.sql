@@ -10,3 +10,7 @@ SELECT * FROM jobs;
 UPDATE jobs
 SET position = $2, company = $3
 WHERE id = $1;
+
+-- name: DeleteJob :exec
+DELETE FROM jobs
+WHERE id = $1;

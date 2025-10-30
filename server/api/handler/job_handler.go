@@ -79,3 +79,25 @@ func UpdateJob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte("Job has been updated"))
 }
+
+func DeleteJob(w http.ResponseWriter, r *http.Request) {
+	var job respository.Job
+
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&job); err != nil {
+		panic(err)
+	}
+
+	ctx := r.Context()
+	dbConn := database.DatabaseConnection()
+	repo := respository.New(dbConn)
+
+	if err := repo.DeleteJob(ctx, job.ID); err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte("Job has been deleted"))
+}
