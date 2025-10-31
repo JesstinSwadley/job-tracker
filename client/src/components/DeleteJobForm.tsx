@@ -15,7 +15,7 @@ const DeleteJobForm = () => {
 		// ID is number
 		const idNum: number = Number(id);
 
-		await fetch(`${API_URL}/job/update`, {
+		await fetch(`${API_URL}/job/delete`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
@@ -36,7 +36,7 @@ const DeleteJobForm = () => {
 					<label 
 						className='block mb-2 text-sm'
 						htmlFor="idInput">
-							<span>Position</span>
+							<span>Position ID</span>
 					</label>
 					<input
 						className='block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm'
