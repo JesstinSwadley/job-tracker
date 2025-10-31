@@ -1,3 +1,4 @@
+import DeleteJobForm from "./components/DeleteJobForm"
 import JobTable from "./components/JobTable"
 import NewJobForm from "./components/NewJobForm"
 import UpdateJobForm from "./components/UpdateJobForm"
@@ -18,7 +19,11 @@ function App() {
 			<section
 				className="flex justify-center m-5">
 				<UpdateJobForm />
-			</section>'
+			</section>
+
+			<section>
+				<DeleteJobForm />
+			</section>
 		</>
 	)
 }
