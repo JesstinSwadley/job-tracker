@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/go-ecommerce cmd/main.go
+	@go build -o bin/go-job-tracker cmd/main.go
 
 run: build
-	@./bin/go-ecommerce
+	@./bin/go-job-tracker
 
 dev:
 	@go run cmd/main.go
