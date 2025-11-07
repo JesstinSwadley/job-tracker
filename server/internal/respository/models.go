@@ -9,3 +9,8 @@ type Job struct {
 	Position string
 	Company  string
 }
+
+type User struct {
+	Username     string
+	HashPassword string
+}
