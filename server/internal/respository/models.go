@@ -11,6 +11,7 @@ type Job struct {
 }
 
 type User struct {
+	ID           int32
 	Username     string
 	HashPassword string
 }

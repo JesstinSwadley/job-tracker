@@ -9,10 +9,34 @@ import (
 	"context"
 )
 
+const findUserById = `-- name: FindUserById :one
+SELECT id, username, hash_password FROM users
+WHERE id = $1
+`
+
+func (q *Queries) FindUserById(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRow(ctx, findUserById, id)
+	var i User
+	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
+	return i, err
+}
+
+const findUserByUsername = `-- name: FindUserByUsername :one
+SELECT id, username, hash_password FROM users
+WHERE username = $1
+`
+
+func (q *Queries) FindUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, findUserByUsername, username)
+	var i User
+	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
+	return i, err
+}
+
 const insertUser = `-- name: InsertUser :one
 INSERT INTO users (username, hash_password)
 VALUES ($1, $2)
-RETURNING username, hash_password
+RETURNING id, username, hash_password
 `
 
 type InsertUserParams struct {
@@ -23,6 +47,6 @@ type InsertUserParams struct {
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, insertUser, arg.Username, arg.HashPassword)
 	var i User
-	err := row.Scan(&i.Username, &i.HashPassword)
+	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
 	return i, err
 }
