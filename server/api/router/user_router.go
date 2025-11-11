@@ -10,6 +10,7 @@ func UserRouter() *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.HandleFunc("POST /register", handler.RegisterUser)
+	router.HandleFunc("POST /login", handler.LoginUser)
 
 	return router
 }
