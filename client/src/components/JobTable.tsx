@@ -53,6 +53,19 @@ const JobTable = () => {
 								<td className='px-3'>{job.ID}</td>
 								<td className='px-3'>{job.Company}</td>
 								<td className='px-3'>{job.Position}</td>
+								<td>
+									<button 
+										className="mr-3 px-4 py-2 rounded bg-amber-400 text-stone-900 font-semibold hover:bg-amber-500">
+											<span>Edit</span>
+									</button>
+								</td>
+
+								<td>
+									<button 
+										className="mr-3 px-4 py-2 rounded bg-red-600 text-zinc-100 font-semibold hover:bg-red-700">
+											<span>Delete</span>
+									</button>
+								</td>
 							</tr>
 						))
 					}
