@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PopUp from './PopUp';
 
 // Assign Backend API URL to variable
 const API_URL = import.meta.env.VITE_API_URL;
@@ -11,6 +12,7 @@ type Job = {
 
 const JobTable = () => {
 	const [jobs, setJobs] = useState<Job[]>([]);
+	const [showPopup, setShowPopup] = useState<boolean>(false);
 
 	useEffect(() => {
 		const fetchJobs = async () => {
@@ -24,7 +26,13 @@ const JobTable = () => {
 		fetchJobs();
 	}, []);
 
-	console.log(jobs.map(job => console.log(job)));
+	const openEditForm = () => {
+		setShowPopup(true)
+	}
+
+	const closePopUp = () => {
+		setShowPopup(false)
+	}
 
 	return (
 		<div
@@ -50,12 +58,13 @@ const JobTable = () => {
 						jobs.map(job => (
 							<tr 
 								key={job.ID}>
-								<td className='px-3'>{job.ID}</td>
+								<td className='px-3 py-5 m-2'>{job.ID}</td>
 								<td className='px-3'>{job.Company}</td>
 								<td className='px-3'>{job.Position}</td>
 								<td>
 									<button 
-										className="mr-3 px-4 py-2 rounded bg-amber-400 text-stone-900 font-semibold hover:bg-amber-500">
+										className="mr-3 px-4 py-2 rounded bg-amber-400 text-stone-900 font-semibold hover:bg-amber-500"
+										onClick={openEditForm}>
 											<span>Edit</span>
 									</button>
 								</td>
@@ -71,6 +80,8 @@ const JobTable = () => {
 					}
 				</tbody>
 			</table>
+
+			<PopUp showPopup={showPopup} onClose={closePopUp}/>
 		</div>
 	)
 }
