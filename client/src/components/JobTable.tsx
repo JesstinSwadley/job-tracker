@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import PopUp from './PopUp';
+import DeleteJobForm from './DeleteJobForm';
+import UpdateJobForm from './UpdateJobForm';
 
 // Assign Backend API URL to variable
 const API_URL = import.meta.env.VITE_API_URL;
@@ -12,7 +14,8 @@ type Job = {
 
 const JobTable = () => {
 	const [jobs, setJobs] = useState<Job[]>([]);
-	const [showPopup, setShowPopup] = useState<boolean>(false);
+	const [showEditPopup, setShowEditPopup] = useState<boolean>(false);
+	const [showDeletePopup, setShowDeletePopup] = useState<boolean>(false);
 
 	useEffect(() => {
 		const fetchJobs = async () => {
@@ -27,11 +30,19 @@ const JobTable = () => {
 	}, []);
 
 	const openEditForm = () => {
-		setShowPopup(true)
+		setShowEditPopup(true)
 	}
 
-	const closePopUp = () => {
-		setShowPopup(false)
+	const openDeleteForm = () => {
+		setShowDeletePopup(true)
+	}
+
+	const closeEditPopUp = () => {
+		setShowEditPopup(false)
+	}
+
+	const closeDeletePopUp = () => {
+		setShowDeletePopup(false)
 	}
 
 	return (
@@ -57,6 +68,7 @@ const JobTable = () => {
 					{
 						jobs.map(job => (
 							<tr 
+								className='border-b-1'
 								key={job.ID}>
 								<td className='px-3 py-5 m-2'>{job.ID}</td>
 								<td className='px-3'>{job.Company}</td>
@@ -71,7 +83,8 @@ const JobTable = () => {
 
 								<td>
 									<button 
-										className="mr-3 px-4 py-2 rounded bg-red-600 text-zinc-100 font-semibold hover:bg-red-700">
+										className="mr-3 px-4 py-2 rounded bg-red-600 text-zinc-100 font-semibold hover:bg-red-700"
+										onClick={openDeleteForm}>
 											<span>Delete</span>
 									</button>
 								</td>
@@ -81,7 +94,17 @@ const JobTable = () => {
 				</tbody>
 			</table>
 
-			<PopUp showPopup={showPopup} onClose={closePopUp}/>
+			<PopUp 
+				showPopup={showEditPopup} 
+				onClose={closeEditPopUp}>
+					<UpdateJobForm />
+			</PopUp>
+
+			<PopUp 
+				showPopup={showDeletePopup} 
+				onClose={closeDeletePopUp}>
+					<DeleteJobForm />
+			</PopUp>
 		</div>
 	)
 }

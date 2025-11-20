@@ -29,7 +29,7 @@ const DeleteJobForm = () => {
 	return (
 		<>
 			<form
-				className='shadow-md p-4 mx-4 flex-col'
+				className='shadow-md p-4 mx-4 flex-col bg-white'
 				onSubmit={handleSubmit}>
 				<div
 					className='mb-5'>
@@ -50,7 +50,7 @@ const DeleteJobForm = () => {
 				<button
 					className='mb-3 p-2 bg-blue-500 text-white rounded cursor-pointer'
 					type='submit'>
-					<span>Update Job</span>
+					<span>Delete Job</span>
 				</button>
 			</form>
 		</>
