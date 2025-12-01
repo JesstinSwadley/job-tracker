@@ -29,12 +29,12 @@ const DeleteJobForm = () => {
 	return (
 		<>
 			<form
-				className='shadow-md p-4 mx-4 flex-col bg-white'
+				className='shadow-md p-4 mx-4 flex-col bg-white rounded'
 				onSubmit={handleSubmit}>
 				<div
 					className='mb-5'>
 					<label 
-						className='block mb-2 text-sm'
+						className='block mb-2 text-sm text-slate-500'
 						htmlFor="idInput">
 							<span>Position ID</span>
 					</label>
