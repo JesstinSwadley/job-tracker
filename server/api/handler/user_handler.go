@@ -3,11 +3,16 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/JesstinSwadley/job-tracker/internal/database"
 	"github.com/JesstinSwadley/job-tracker/internal/respository"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const secretKey = "secret"
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var user respository.User
@@ -47,18 +52,47 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&user); err != nil {
-		panic(err)
+		w.WriteHeader(401)
+		w.Write([]byte("incorrect username or password"))
+		return
 	}
 
 	u, err := repo.FindUserByUsername(ctx, user.Username)
 
 	if err != nil {
-		panic(err)
+		w.WriteHeader(401)
+		w.Write([]byte("incorrect username or password"))
+		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(u.HashPassword), []byte(user.HashPassword)); err != nil {
-		panic(err)
+		w.WriteHeader(400)
+		w.Write([]byte("incorrect username or password"))
+		return
 	}
+
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss": strconv.Itoa(int(u.ID)),
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+
+	token, err := claims.SignedString([]byte(secretKey))
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("could not login"))
+		return
+	}
+
+	cookie := http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Expires:  time.Now().Add(time.Hour),
+		MaxAge:   3600,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, &cookie)
 
 	w.WriteHeader(200)
 	w.Write([]byte(u.Username + " has been logged in"))
