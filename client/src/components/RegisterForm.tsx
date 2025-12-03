@@ -13,7 +13,7 @@ const RegisterForm = () => {
 		const email = formData.get("email");
 		const password = formData.get("password");
 
-		await fetch(`${API_URL}`, {
+		await fetch(`${API_URL}/user/register`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
