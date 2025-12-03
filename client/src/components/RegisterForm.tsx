@@ -10,7 +10,7 @@ const RegisterForm = () => {
 		const form: HTMLFormElement = e.target as HTMLFormElement;
 		const formData: FormData = new FormData(form);
 
-		const email = formData.get("email");
+		const username = formData.get("username");
 		const password = formData.get("password");
 
 		await fetch(`${API_URL}/user/register`, {
@@ -19,7 +19,7 @@ const RegisterForm = () => {
 			},
 			method: 'POST',
 			body: JSON.stringify({
-				email,
+				username,
 				password
 			})
 		});
@@ -33,14 +33,14 @@ const RegisterForm = () => {
 				<div>
 					<label
 						className="block mb-2 text-sm text-slate-500"
-						htmlFor="emailInput">
-						<span>Email</span>
+						htmlFor="usernameInput">
+						<span>Username</span>
 					</label>
 					<input
 						className="block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm"
-						id="emailInput"
-						name="email"
-						type="email"
+						id="usernameInput"
+						name="username"
+						type="username"
 						required />
 				</div>
 				<div>
