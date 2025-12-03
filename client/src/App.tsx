@@ -2,6 +2,7 @@ import { useState } from "react"
 import JobTable from "./components/JobTable"
 import NewJobForm from "./components/NewJobForm"
 import PopUp from "./components/PopUp";
+import RegisterForm from "./components/RegisterForm";
 
 function App() {
 	const [showNewPopup, setShowNewPopup] = useState<boolean>(false);
@@ -21,6 +22,10 @@ function App() {
 				onClick={openNewForm}>
 					<span>New Job</span>
 			</button>
+
+			<div>
+				<RegisterForm />
+			</div>
 
 			<section
 				className="flex justify-center m-5">
