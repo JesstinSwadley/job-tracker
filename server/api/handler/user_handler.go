@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,19 +25,32 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&user); err != nil {
-		panic(err)
+		fmt.Print(err)
+		w.WriteHeader(400)
+		w.Write([]byte("unable to register user"))
+		return
 	}
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.HashPassword), 10)
 
 	if err != nil {
-		panic(err)
+		fmt.Print(err)
+		w.WriteHeader(400)
+		w.Write([]byte("unable to register user"))
+		return
 	}
 
 	u, err := repo.InsertUser(ctx, respository.InsertUserParams{
 		Username:     user.Username,
 		HashPassword: string(bytes),
 	})
+
+	if err != nil {
+		fmt.Print(err)
+		w.WriteHeader(400)
+		w.Write([]byte("unable to register user"))
+		return
+	}
 
 	w.WriteHeader(201)
 	w.Write([]byte(u.Username + " has been registered"))
