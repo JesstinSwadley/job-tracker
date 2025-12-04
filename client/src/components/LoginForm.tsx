@@ -3,7 +3,7 @@ import React from 'react'
 // Assign Backend API URL to variable
 const API_URL = import.meta.env.VITE_API_URL
 
-const RegisterForm = () => {
+const LoginForm = () => {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
@@ -13,7 +13,7 @@ const RegisterForm = () => {
 		const username = formData.get("username");
 		const password = formData.get("password");
 
-		await fetch(`${API_URL}/user/register`, {
+		await fetch(`${API_URL}/user/login`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
@@ -47,7 +47,7 @@ const RegisterForm = () => {
 					<label
 						className="block mb-2 text-sm text-slate-500"
 						htmlFor="passwordInput">
-						<span>Password</span>
+						<span></span>
 					</label>
 					<input
 						className="block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm"
@@ -59,11 +59,11 @@ const RegisterForm = () => {
 				<button
 					className="mb-3 p-2 bg-blue-500 text-white rounded cursor-pointer"
 					type="submit">
-					<span>Register</span>
+					<span>Login</span>
 				</button>
 			</form>
 		</>
 	)
 }
 
-export default RegisterForm
+export default LoginForm
