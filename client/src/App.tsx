@@ -3,6 +3,7 @@ import JobTable from "./components/JobTable"
 import NewJobForm from "./components/NewJobForm"
 import PopUp from "./components/PopUp";
 import RegisterForm from "./components/RegisterForm";
+import Nav from "./components/Nav";
 
 function App() {
 	const [showNewPopup, setShowNewPopup] = useState<boolean>(false);
@@ -17,6 +18,8 @@ function App() {
 	
 	return (
 		<>
+			<Nav />
+
 			<button 
 				className="mr-3 px-4 py-2 rounded bg-blue-600 text-zinc-100 font-semibold hover:bg-blue-700"
 				onClick={openNewForm}>
