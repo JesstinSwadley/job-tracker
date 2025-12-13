@@ -14,6 +14,7 @@ type Job = {
 
 const JobTable = () => {
 	const [jobs, setJobs] = useState<Job[]>([]);
+	const [job, setJob] = useState<number>(0);
 	const [showEditPopup, setShowEditPopup] = useState<boolean>(false);
 	const [showDeletePopup, setShowDeletePopup] = useState<boolean>(false);
 
@@ -29,7 +30,8 @@ const JobTable = () => {
 		fetchJobs();
 	}, []);
 
-	const openEditForm = () => {
+	const openEditForm = (job: number) => {
+		setJob(job);
 		setShowEditPopup(true)
 	}
 
@@ -76,7 +78,7 @@ const JobTable = () => {
 								<td>
 									<button 
 										className="mr-3 px-4 py-2 rounded bg-amber-400 text-stone-900 font-semibold hover:bg-amber-500"
-										onClick={openEditForm}>
+										onClick={() => openEditForm(job.ID)}>
 											<span>Edit</span>
 									</button>
 								</td>
@@ -97,7 +99,8 @@ const JobTable = () => {
 			<PopUp 
 				showPopup={showEditPopup} 
 				onClose={closeEditPopUp}>
-					<UpdateJobForm />
+					<UpdateJobForm 
+						jobId={job}/>
 			</PopUp>
 
 			<PopUp 
