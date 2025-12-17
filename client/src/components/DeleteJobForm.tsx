@@ -3,7 +3,13 @@ import React from 'react'
 // Assign Backend API URL to variable
 const API_URL = import.meta.env.VITE_API_URL
 
-const DeleteJobForm = () => {
+type job = {
+	jobId: number
+}
+
+const DeleteJobForm = ({ jobId }: job) => {
+	console.log(jobId);
+
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 

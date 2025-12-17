@@ -35,7 +35,8 @@ const JobTable = () => {
 		setShowEditPopup(true)
 	}
 
-	const openDeleteForm = () => {
+	const openDeleteForm = (job: number) => {
+		setJob(job);
 		setShowDeletePopup(true)
 	}
 
@@ -86,7 +87,7 @@ const JobTable = () => {
 								<td>
 									<button 
 										className="mr-3 px-4 py-2 rounded bg-red-600 text-zinc-100 font-semibold hover:bg-red-700"
-										onClick={openDeleteForm}>
+										onClick={() => openDeleteForm(job.ID)}>
 											<span>Delete</span>
 									</button>
 								</td>
@@ -106,7 +107,8 @@ const JobTable = () => {
 			<PopUp 
 				showPopup={showDeletePopup} 
 				onClose={closeDeletePopUp}>
-					<DeleteJobForm />
+					<DeleteJobForm 
+						jobId={job}/>
 			</PopUp>
 		</div>
 	)
