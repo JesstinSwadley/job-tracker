@@ -18,6 +18,7 @@ const LoginForm = () => {
 				'Content-Type': 'application/json',
 			},
 			method: 'POST',
+			credentials: 'include',
 			body: JSON.stringify({
 				username,
 				password
