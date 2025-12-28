@@ -3,6 +3,7 @@ import Nav from "./components/Nav";
 import { BrowserRouter, Routes } from "react-router";
 import { Route } from "react-router";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 
 function App() {
 
@@ -16,7 +17,11 @@ function App() {
 					<Routes>
 						<Route 
 							path="/"
-							Component={Home}/>
+							Component={Home} />
+						
+						<Route
+							path="/login"
+							Component={Login} />
 					</Routes>
 				</main>
 			</BrowserRouter>
