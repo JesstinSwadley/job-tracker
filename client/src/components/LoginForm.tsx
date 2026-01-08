@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router'
 
 // Assign Backend API URL to variable
 const API_URL = import.meta.env.VITE_API_URL
@@ -28,40 +29,82 @@ const LoginForm = () => {
 
 	return (
 		<>
-			<form
-				className="shadow-md p-4 mx-4 flex-col bg-white rounded"
-				onSubmit={handleSubmit}>
-				<div>
-					<label
-						className="block mb-2 text-sm text-slate-500"
-						htmlFor="usernameInput">
-						<span>Username</span>
+			<form 
+				onSubmit={handleSubmit}
+				className="space-y-6">
+					<div
+						className="space-y-1">
+							<h2 className="text-xl font-bold text-black">Login</h2>
+							<Link
+								className="text-sm font-bold text-gray-300"
+								to="#">
+									Need to register an account? Create an account
+							</Link>
+					</div>
+				
+				<div
+					className="space-y-1">
+					<label 
+						className="text-sm font-bold text-black"
+						htmlFor="emailusername">
+							Email or Username
 					</label>
-					<input
-						className="block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm"
-						id="usernameInput"
-						name="username"
-						type="text"
-						required />
+					<input 
+						type="text" 
+						name="emailusername" 
+						id="emailusername" 
+						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 				</div>
-				<div>
-					<label
-						className="block mb-2 text-sm text-slate-500"
-						htmlFor="passwordInput">
-						<span></span>
+
+				<div
+					className="space-y-1">
+					<label 
+						htmlFor="password"
+						className="text-sm font-bold text-black">
+							Password
 					</label>
-					<input
-						className="block w-full p-2 bg-white outline-gray-300 placeholder:text-gray-400 outline-solid rounded-sm"
-						id="passwordInput"
-						name="password"
-						type="password"
-						required />
+					<input 
+						type="password" 
+						name="password" 
+						id="password"
+						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 				</div>
+
+				<div
+					className="flex items-center gap-2">
+					<input 
+						type="checkbox" 
+						name="remember" 
+						id="remember" 
+						className="h-5 w-5 rounded border-gray-200" />
+					<label 
+						htmlFor="remember"
+						className="text-sm font-bold text-black" >
+							Keep me logged in?
+					</label>
+				</div>
+
 				<button
-					className="mb-3 p-2 bg-blue-500 text-white rounded cursor-pointer"
-					type="submit">
-					<span>Login</span>
+					type="submit"
+					className="w-40 rounded-lg bg-blue-600 py-3 text-lg font-bold text-white hover:bg-blue-700 transition">
+						Login
 				</button>
+
+
+				<div
+					className="flex justify-between text-sm font-bold text-gray-300">
+					<Link
+						className="hover:underline"
+						to="#">
+							Forgot Username?
+					</Link>
+					
+					<Link
+						className="hover:underline"
+						to="#">
+							Forgot Password?
+					</Link>
+				</div>
 			</form>
 		</>
 	)
