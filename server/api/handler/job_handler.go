@@ -21,8 +21,14 @@ func NewJobHandler(repo JobRepo) *JobHandler {
 }
 
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	if r.Method != http.MethodPost {
-		http.Error(w, `{"error":"Method Not Allowed"}`, http.StatusMethodNotAllowed)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Method Not Allowed",
+		})
+
 		return
 	}
 
@@ -32,28 +38,27 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Invalid request body",
+		})
+
 		return
 	}
 
 	job, err := h.Repo.InsertJob(r.Context(), payload.Position, payload.Company)
 
 	if err != nil {
-		http.Error(w, `{"error":"Failed to insert job"}`, http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Failed to insert job",
+		})
+
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(struct {
-		ID       int32  `json:"id"`
-		Position string `json:"position"`
-		Company  string `json:"company"`
-	}{
-		ID:       job.ID,
-		Position: job.Position,
-		Company:  job.Company,
-	})
+	json.NewEncoder(w).Encode(job)
 }
 
 // func GetListOfJobs(w http.ResponseWriter, r *http.Request) {

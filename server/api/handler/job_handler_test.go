@@ -1,11 +1,11 @@
 package handler_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/JesstinSwadley/job-tracker/api/handler"
@@ -19,6 +19,13 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (re
 		ID:       1,
 		Position: position,
 		Company:  company,
+	}, nil
+}
+
+func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
+	return []repository.Job{
+		{ID: 1, Position: "Backend Engineer", Company: "Acme Corp"},
+		{ID: 2, Position: "Frontend Engineer", Company: "Beta Inc"},
 	}, nil
 }
 
@@ -66,7 +73,7 @@ func TestCreateJobHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, "/jobs", bytes.NewBufferString(tt.body))
+			req := httptest.NewRequest(tt.method, "/jobs", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
