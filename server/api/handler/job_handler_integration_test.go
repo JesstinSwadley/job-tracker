@@ -12,10 +12,10 @@ import (
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/api/handler"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
-	"github.com/JesstinSwadley/job-tracker/internal/respository"
+	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
 
-func setupTestDB(t *testing.T) *respository.Queries {
+func setupTestDB(t *testing.T) *repository.Queries {
 	t.Helper()
 
 	dbURL := os.Getenv("TEST_DB_URL")
@@ -35,7 +35,7 @@ func setupTestDB(t *testing.T) *respository.Queries {
 		t.Fatalf("failed to truncate jobs table: %v", err)
 	}
 
-	return respository.New(dbPool)
+	return repository.New(dbPool)
 }
 
 func TestCreateJobIntegration(t *testing.T) {
@@ -76,7 +76,7 @@ func TestCreateJobIntegration(t *testing.T) {
 	t.Logf("response: %s", respBody)
 
 	// Optional: verify job exists in DB
-	insertedJob, err := queries.InsertJob(context.Background(), respository.InsertJobParams{
+	insertedJob, err := queries.InsertJob(context.Background(), repository.InsertJobParams{
 		Position: "Integration Engineer",
 		Company:  "Acme Corp",
 	})

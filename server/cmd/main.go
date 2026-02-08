@@ -12,7 +12,7 @@ import (
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/api/handler"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
-	"github.com/JesstinSwadley/job-tracker/internal/respository"
+	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 		}
 	}
 
-	sqlcRepo := respository.New(dbPool)
+	sqlcRepo := repository.New(dbPool)
 	jobRepo := &handler.SQLCJobRepo{Queries: sqlcRepo}
 
 	// API Router

@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/JesstinSwadley/job-tracker/api"
-	"github.com/JesstinSwadley/job-tracker/internal/respository"
+	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
 
 type mockJobRepo struct{}
 
-func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (respository.Job, error) {
-	return respository.Job{
+func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (repository.Job, error) {
+	return repository.Job{
 		ID:       1,
 		Position: position,
 		Company:  company,
@@ -31,13 +31,19 @@ func TestJobRouter(t *testing.T) {
 		path           string
 		body           string
 		expectedStatus int
+		expectedJSON   map[string]interface{}
 	}{
 		{
 			name:           "Valid POST /api/v1/jobs",
 			method:         http.MethodPost,
 			path:           "/api/v1/jobs",
-			body:           `{"position":"Software Engineer","company":"Acme Corp"}`,
+			body:           `{"position":"Software Engineer","company":"Test Corp"}`,
 			expectedStatus: http.StatusCreated,
+			expectedJSON: map[string]interface{}{
+				"id":       float64(1),
+				"position": "Software Engineer",
+				"company":  "Test Corp",
+			},
 		},
 		{
 			name:           "Invalid method GET /api/v1/jobs",
@@ -45,6 +51,9 @@ func TestJobRouter(t *testing.T) {
 			path:           "/api/v1/jobs",
 			body:           ``,
 			expectedStatus: http.StatusMethodNotAllowed,
+			expectedJSON: map[string]interface{}{
+				"error": "Method Not Allowed",
+			},
 		},
 		{
 			name:           "Unknown route /api/v1/unknown",

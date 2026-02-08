@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package respository
+package repository
 
 type Job struct {
 	ID       int32
