@@ -1,0 +1,86 @@
+openapi: 3.0.3
+
+info:
+  title: Job Tracker API
+  description: API for tracking job applications.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /api/v1/jobs:
+    post:
+      summary: Create a new job application
+      operationId: createJob
+      tags:
+        - Jobs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+      responses:
+        '201':
+          description: Job successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+components:
+  schemas:
+    CreateJobRequest:
+      type: object
+      required:
+        - position
+        - company
+      properties:
+        position:
+          type: string
+          example: Backend Engineer
+        company:
+          type: string
+          example: Acme Corp
+
+    JobResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        position:
+          type: string
+          example: Backend Engineer
+        company:
+          type: string
+          example: Acme Corp
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid request body
