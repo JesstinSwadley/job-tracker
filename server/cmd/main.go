@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/rs/cors"
 
 	"github.com/JesstinSwadley/job-tracker/api"
+	"github.com/JesstinSwadley/job-tracker/api/handler"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
+	"github.com/JesstinSwadley/job-tracker/internal/respository"
 )
 
 func main() {
@@ -20,12 +23,23 @@ func main() {
 	}
 
 	// Connect To Database
-	ctx := context.Background()
-	conn := database.DatabaseConnection()
-	defer conn.Close(ctx)
+	dbPool := database.DatabasePool()
+	defer dbPool.Close()
 
-	// API Router Handler
-	apiHandler := api.ApiRouter()
+	if os.Getenv("SKIP_DB_PING") != "1" {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := dbPool.Ping(ctx); err != nil {
+			log.Fatalf("failed to ping database: %v", err)
+		}
+	}
+
+	sqlcRepo := respository.New(dbPool)
+	jobRepo := &handler.SQLCJobRepo{Queries: sqlcRepo}
+
+	// API Router
+	apiHandler := api.ApiRouter(jobRepo)
 
 	// CORS Handler
 	handler := cors.AllowAll().Handler(apiHandler)
