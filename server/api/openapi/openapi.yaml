@@ -47,9 +47,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-
-
+  /api/v1/jobs/:
+    get:
+      summary: Get all job applications
+      description: 
+      tags:
+        - Jobs
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobResponse'
+        '500':
+          description: Internal sever error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
 components:
   schemas:
     CreateJobRequest:
