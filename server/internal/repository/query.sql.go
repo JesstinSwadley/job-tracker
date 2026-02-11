@@ -26,8 +26,8 @@ RETURNING id, position, company
 `
 
 type InsertJobParams struct {
-	Position string
-	Company  string
+	Position string `json:"position"`
+	Company  string `json:"company"`
 }
 
 func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, error) {
@@ -68,9 +68,9 @@ WHERE id = $1
 `
 
 type UpdateJobParams struct {
-	ID       int32
-	Position string
-	Company  string
+	ID       int32  `json:"id"`
+	Position string `json:"position"`
+	Company  string `json:"company"`
 }
 
 func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) error {

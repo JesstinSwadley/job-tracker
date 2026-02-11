@@ -5,13 +5,13 @@
 package repository
 
 type Job struct {
-	ID       int32
-	Position string
-	Company  string
+	ID       int32  `json:"id"`
+	Position string `json:"position"`
+	Company  string `json:"company"`
 }
 
 type User struct {
-	ID           int32
-	Username     string
-	HashPassword string
+	ID           int32  `json:"id"`
+	Username     string `json:"username"`
+	HashPassword string `json:"hash_password"`
 }

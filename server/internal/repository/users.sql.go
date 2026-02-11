@@ -40,8 +40,8 @@ RETURNING id, username, hash_password
 `
 
 type InsertUserParams struct {
-	Username     string
-	HashPassword string
+	Username     string `json:"username"`
+	HashPassword string `json:"hash_password"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
