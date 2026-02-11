@@ -22,16 +22,9 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (re
 	}, nil
 }
 
-func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
-	return []repository.Job{
-		{ID: 1, Position: "Backend Engineer", Company: "Acme Corp"},
-		{ID: 2, Position: "Frontend Engineer", Company: "Beta Inc"},
-	}, nil
-}
-
-func TestCreateJobHandler(t *testing.T) {
-	mock := &mockJobRepo{}
-	h := handler.NewJobHandler(mock)
+func TestCreateJob(t *testing.T) {
+	mockRepo := &mockJobRepo{}
+	h := handler.NewJobHandler(mockRepo)
 
 	tests := []struct {
 		name           string
@@ -41,18 +34,18 @@ func TestCreateJobHandler(t *testing.T) {
 		expectedJSON   map[string]interface{}
 	}{
 		{
-			name:           "Valid POST request",
+			name:           "POST method with body returns 201",
 			method:         http.MethodPost,
-			body:           `{"position":"Software Engineer","company":"Test Corp"}`,
+			body:           `{"position": "dev", "company": "test"}`,
 			expectedStatus: http.StatusCreated,
 			expectedJSON: map[string]interface{}{
 				"id":       float64(1),
-				"position": "Software Engineer",
-				"company":  "Test Corp",
+				"position": "dev",
+				"company":  "test",
 			},
 		},
 		{
-			name:           "Invalid JSON body",
+			name:           "POST method with invalid JSON returns 400",
 			method:         http.MethodPost,
 			body:           `invalid-json`,
 			expectedStatus: http.StatusBadRequest,
@@ -61,8 +54,26 @@ func TestCreateJobHandler(t *testing.T) {
 			},
 		},
 		{
-			name:           "Wrong HTTP method",
+			name:           "POST method without returns 400",
+			method:         http.MethodPost,
+			body:           ``,
+			expectedStatus: http.StatusBadRequest,
+			expectedJSON: map[string]interface{}{
+				"error": "Invalid request body",
+			},
+		},
+		{
+			name:           "GET method returns 405",
 			method:         http.MethodGet,
+			body:           ``,
+			expectedStatus: http.StatusMethodNotAllowed,
+			expectedJSON: map[string]interface{}{
+				"error": "Method Not Allowed",
+			},
+		},
+		{
+			name:           "PUT method returns 405",
+			method:         http.MethodPut,
 			body:           ``,
 			expectedStatus: http.StatusMethodNotAllowed,
 			expectedJSON: map[string]interface{}{
@@ -80,20 +91,26 @@ func TestCreateJobHandler(t *testing.T) {
 			h.CreateJob(w, req)
 
 			resp := w.Result()
+			defer resp.Body.Close()
+
 			if resp.StatusCode != tt.expectedStatus {
-				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+				t.Fatalf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+
+			if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+				t.Errorf("expected Content-Type application/json, got %q", ct)
 			}
 
 			if tt.expectedJSON != nil {
-				var responseBody map[string]interface{}
+				var respBody map[string]interface{}
 
-				if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
+				if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
 					t.Fatalf("failed to decode JSON response: %v", err)
 				}
 
-				for key, expected := range tt.expectedJSON {
-					if responseBody[key] != expected {
-						t.Errorf("expected JSON %s=%v, got %v", key, expected, responseBody[key])
+				for k, v := range tt.expectedJSON {
+					if respBody[k] != v {
+						t.Errorf("expected JSON %s=%v, got %v", k, v, respBody[k])
 					}
 				}
 			}

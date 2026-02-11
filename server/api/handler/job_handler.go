@@ -20,6 +20,11 @@ func NewJobHandler(repo JobRepo) *JobHandler {
 	return &JobHandler{Repo: repo}
 }
 
+type CreateJobRequest struct {
+	Position string `json:"position"`
+	Company  string `json:"company"`
+}
+
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -32,26 +37,24 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload struct {
-		Position string `json:"position"`
-		Company  string `json:"company"`
-	}
+	var reqBody CreateJobRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"error": "Invalid request body",
 		})
 
 		return
+
 	}
 
-	job, err := h.Repo.InsertJob(r.Context(), payload.Position, payload.Company)
+	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Failed to insert job",
+			"error": "Failed to create job",
 		})
 
 		return
@@ -61,70 +64,64 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
-// func GetListOfJobs(w http.ResponseWriter, r *http.Request) {
-// 	ctx := r.Context()
-// 	dbConn := database.DatabaseConnection()
-// 	repo := respository.New(dbConn)
+// func (*JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
 
-// 	jobs, err := repo.ListJobs(ctx)
+// 	if r.Method != http.MethodGet {
+// 		w.WriteHeader(http.StatusMethodNotAllowed)
+// 		json.NewEncoder(w).Encode(map[string]string{
+// 			"error": "Method Not Allowed",
+// 		})
 
-// 	if err != nil {
-// 		panic(err)
+// 		return
 // 	}
 
-// 	jobsData, err := json.Marshal(jobs)
-
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	w.WriteHeader(200)
-// 	w.Write(jobsData)
+// 	w.WriteHeader(http.StatusOK)
 // }
 
-// func UpdateJob(w http.ResponseWriter, r *http.Request) {
-// 	var job respository.Job
+// // func UpdateJob(w http.ResponseWriter, r *http.Request) {
+// // 	var job respository.Job
 
-// 	decoder := json.NewDecoder(r.Body)
+// // 	decoder := json.NewDecoder(r.Body)
 
-// 	if err := decoder.Decode(&job); err != nil {
-// 		panic(err)
-// 	}
+// // 	if err := decoder.Decode(&job); err != nil {
+// // 		panic(err)
+// // 	}
 
-// 	updateJob := respository.UpdateJobParams(job)
+// // 	updateJob := respository.UpdateJobParams(job)
 
-// 	ctx := r.Context()
-// 	dbConn := database.DatabaseConnection()
-// 	repo := respository.New(dbConn)
+// // 	ctx := r.Context()
+// // 	dbConn := database.DatabaseConnection()
+// // 	repo := respository.New(dbConn)
 
-// 	err := repo.UpdateJob(ctx, updateJob)
+// // 	err := repo.UpdateJob(ctx, updateJob)
 
-// 	if err != nil {
-// 		panic(err)
-// 	}
+// // 	if err != nil {
+// // 		panic(err)
+// // 	}
 
-// 	w.WriteHeader(200)
-// 	w.Write([]byte("Job has been updated"))
-// }
+// // 	w.WriteHeader(200)
+// // 	w.Write([]byte("Job has been updated"))
+// // }
 
-// func DeleteJob(w http.ResponseWriter, r *http.Request) {
-// 	var job respository.Job
+// // func DeleteJob(w http.ResponseWriter, r *http.Request) {
+// // 	var job respository.Job
 
-// 	decoder := json.NewDecoder(r.Body)
+// // 	decoder := json.NewDecoder(r.Body)
 
-// 	if err := decoder.Decode(&job); err != nil {
-// 		panic(err)
-// 	}
+// // 	if err := decoder.Decode(&job); err != nil {
+// // 		panic(err)
+// // 	}
 
-// 	ctx := r.Context()
-// 	dbConn := database.DatabaseConnection()
-// 	repo := respository.New(dbConn)
+// // 	ctx := r.Context()
+// // 	dbConn := database.DatabaseConnection()
+// // 	repo := respository.New(dbConn)
 
-// 	if err := repo.DeleteJob(ctx, job.ID); err != nil {
-// 		panic(err)
-// 	}
+// // 	if err := repo.DeleteJob(ctx, job.ID); err != nil {
+// // 		panic(err)
+// // 	}
 
-// 	w.WriteHeader(200)
-// 	w.Header().Add("Content-Type", "application/json")
-// 	w.Write([]byte("Job has been deleted"))
-// }
+// // 	w.WriteHeader(200)
+// // 	w.Header().Add("Content-Type", "application/json")
+// // 	w.Write([]byte("Job has been deleted"))
+// // }
