@@ -19,30 +19,12 @@ func (q *Queries) DeleteJob(ctx context.Context, id int32) error {
 	return err
 }
 
-const insertJob = `-- name: InsertJob :one
-INSERT INTO jobs (position, company)
-VALUES ($1, $2)
-RETURNING id, position, company
-`
-
-type InsertJobParams struct {
-	Position string `json:"position"`
-	Company  string `json:"company"`
-}
-
-func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, error) {
-	row := q.db.QueryRow(ctx, insertJob, arg.Position, arg.Company)
-	var i Job
-	err := row.Scan(&i.ID, &i.Position, &i.Company)
-	return i, err
-}
-
-const listJobs = `-- name: ListJobs :many
+const getJobs = `-- name: GetJobs :many
 SELECT id, position, company FROM jobs
 `
 
-func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
-	rows, err := q.db.Query(ctx, listJobs)
+func (q *Queries) GetJobs(ctx context.Context) ([]Job, error) {
+	rows, err := q.db.Query(ctx, getJobs)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +41,24 @@ func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertJob = `-- name: InsertJob :one
+INSERT INTO jobs (position, company)
+VALUES ($1, $2)
+RETURNING id, position, company
+`
+
+type InsertJobParams struct {
+	Position string `json:"position"`
+	Company  string `json:"company"`
+}
+
+func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, error) {
+	row := q.db.QueryRow(ctx, insertJob, arg.Position, arg.Company)
+	var i Job
+	err := row.Scan(&i.ID, &i.Position, &i.Company)
+	return i, err
 }
 
 const updateJob = `-- name: UpdateJob :exec

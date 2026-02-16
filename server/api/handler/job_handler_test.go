@@ -12,7 +12,10 @@ import (
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
 
-type mockJobRepo struct{}
+type mockJobRepo struct {
+	jobs []repository.Job
+	err  error
+}
 
 func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (repository.Job, error) {
 	return repository.Job{
@@ -20,6 +23,10 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (re
 		Position: position,
 		Company:  company,
 	}, nil
+}
+
+func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
+	return m.jobs, m.err
 }
 
 func TestCreateJob(t *testing.T) {
@@ -112,6 +119,102 @@ func TestCreateJob(t *testing.T) {
 					if respBody[k] != v {
 						t.Errorf("expected JSON %s=%v, got %v", k, v, respBody[k])
 					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetJobs(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		mockJobs       []repository.Job
+		mockErr        error
+		expectedStatus int
+	}{
+		{
+			name:   "GET method return 200",
+			method: http.MethodGet,
+			mockJobs: []repository.Job{
+				{
+					ID:       1,
+					Position: "dev",
+					Company:  "test",
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GET returns empty array when no jobs",
+			method:         http.MethodGet,
+			mockJobs:       []repository.Job{},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GET request, repo error returns 500",
+			method:         http.MethodGet,
+			mockErr:        context.DeadlineExceeded,
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "POST method return 405",
+			method:         http.MethodPost,
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockJobRepo{
+				jobs: tt.mockJobs,
+				err:  tt.mockErr,
+			}
+
+			h := handler.NewJobHandler(mockRepo)
+
+			req := httptest.NewRequest(tt.method, "/jobs", nil)
+			w := httptest.NewRecorder()
+
+			h.GetJobs(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.expectedStatus {
+				t.Fatalf("expected %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+
+			if resp.Header.Get("Content-Type") != "application/json" {
+				t.Fatalf("expected Content-Type application/json")
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				var jobs []repository.Job
+
+				if err := json.NewDecoder(resp.Body).Decode(&jobs); err != nil {
+					t.Fatalf("failed to decode response: %v", err)
+				}
+
+				if len(jobs) != len(tt.mockJobs) {
+					t.Fatalf("expected %d jobs, got %d", len(tt.mockJobs), len(jobs))
+				}
+
+				for i := range jobs {
+					if jobs[i] != tt.mockJobs[i] {
+						t.Errorf("expected %+v, got %+v", tt.mockJobs[i], jobs[i])
+					}
+				}
+			}
+
+			if tt.expectedStatus == http.StatusInternalServerError || tt.expectedStatus == http.StatusMethodNotAllowed {
+				var body map[string]string
+				if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+					t.Fatalf("failed to decode error response: %v", err)
+				}
+
+				if body["error"] == "" {
+					t.Errorf("expected error message in response")
 				}
 			}
 		})

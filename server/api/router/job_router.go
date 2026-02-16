@@ -7,5 +7,6 @@ import (
 )
 
 func JobRouter(mux *http.ServeMux, h *handler.JobHandler) {
-	mux.HandleFunc("/jobs", h.CreateJob)
+	mux.HandleFunc("POST /jobs", h.CreateJob)
+	mux.HandleFunc("GET /jobs", h.GetJobs)
 }

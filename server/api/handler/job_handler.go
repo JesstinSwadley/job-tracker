@@ -10,6 +10,7 @@ import (
 
 type JobRepo interface {
 	InsertJob(ctx context.Context, position, company string) (repository.Job, error)
+	GetJobs(ctx context.Context) ([]repository.Job, error)
 }
 
 type JobHandler struct {
@@ -64,20 +65,32 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
-// func (*JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	if r.Method != http.MethodGet {
-// 		w.WriteHeader(http.StatusMethodNotAllowed)
-// 		json.NewEncoder(w).Encode(map[string]string{
-// 			"error": "Method Not Allowed",
-// 		})
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Method Not Allowed",
+		})
 
-// 		return
-// 	}
+		return
+	}
 
-// 	w.WriteHeader(http.StatusOK)
-// }
+	jobs, err := h.Repo.GetJobs(r.Context())
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Failed to fetch jobs",
+		})
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jobs)
+}
 
 // // func UpdateJob(w http.ResponseWriter, r *http.Request) {
 // // 	var job respository.Job

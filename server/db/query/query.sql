@@ -3,7 +3,7 @@ INSERT INTO jobs (position, company)
 VALUES ($1, $2)
 RETURNING *;
 
--- name: ListJobs :many
+-- name: GetJobs :many
 SELECT * FROM jobs;
 
 -- name: UpdateJob :exec

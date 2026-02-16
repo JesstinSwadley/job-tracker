@@ -16,3 +16,7 @@ func (s *SQLCJobRepo) InsertJob(ctx context.Context, position, company string) (
 		Company:  company,
 	})
 }
+
+func (s *SQLCJobRepo) GetJobs(ctx context.Context) ([]repository.Job, error) {
+	return s.Queries.GetJobs(ctx)
+}

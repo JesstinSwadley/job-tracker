@@ -76,6 +76,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -95,9 +96,19 @@ func (*mockJobRepo) InsertJob(_ context.Context, position, company string) (repo
 	}, nil
 }
 
+func (*mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
+	return []repository.Job{
+		{
+			ID:       1,
+			Position: "dev",
+			Company:  "test",
+		},
+	}, nil
+}
+
 func TestPostJobRoute(t *testing.T) {
 	mockRepo := &mockJobRepo{}
-	apiHandler := api.ApiRouter(mockRepo) // your API router that handles /api/v1/jobs
+	apiHandler := api.ApiRouter(mockRepo)
 
 	req := httptest.NewRequest("POST", "/api/v1/jobs", strings.NewReader(`{"position":"dev","company":"test"}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -107,5 +118,33 @@ func TestPostJobRoute(t *testing.T) {
 
 	if w.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d", w.Code)
+	}
+}
+
+func TestGetJobRoute(t *testing.T) {
+	mockRepo := &mockJobRepo{}
+	apiHandler := api.ApiRouter(mockRepo)
+
+	req := httptest.NewRequest("GET", "/api/v1/jobs", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	apiHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	if ct := w.Header().Get("Content-Type"); ct != "application/json" {
+		t.Fatalf("expected application/json, got %q", ct)
+	}
+
+	var jobs []repository.Job
+	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
 	}
 }
