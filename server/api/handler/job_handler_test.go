@@ -18,6 +18,10 @@ type mockJobRepo struct {
 }
 
 func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (repository.Job, error) {
+	if m.err != nil {
+		return repository.Job{}, m.err
+	}
+
 	return repository.Job{
 		ID:       1,
 		Position: position,
@@ -26,99 +30,91 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (re
 }
 
 func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
-	return m.jobs, m.err
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return m.jobs, nil
 }
 
 func TestCreateJob(t *testing.T) {
-	mockRepo := &mockJobRepo{}
-	h := handler.NewJobHandler(mockRepo)
-
 	tests := []struct {
 		name           string
 		method         string
 		body           string
+		mockErr        error
 		expectedStatus int
-		expectedJSON   map[string]interface{}
+		expectedID     int32
+		expectedErrMsg string
 	}{
 		{
-			name:           "POST method with body returns 201",
+			name:           "Success: Valid job creation",
 			method:         http.MethodPost,
-			body:           `{"position": "dev", "company": "test"}`,
+			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
 			expectedStatus: http.StatusCreated,
-			expectedJSON: map[string]interface{}{
-				"id":       float64(1),
-				"position": "dev",
-				"company":  "test",
-			},
+			expectedID:     1,
 		},
 		{
-			name:           "POST method with invalid JSON returns 400",
+			name:           "Error: Empty position",
 			method:         http.MethodPost,
-			body:           `invalid-json`,
+			body:           `{"position": "", "company": "Test Company"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedJSON: map[string]interface{}{
-				"error": "Invalid request body",
-			},
+			expectedErrMsg: "Position and Company are required",
 		},
 		{
-			name:           "POST method without returns 400",
+			name:           "Error: Empty Company",
 			method:         http.MethodPost,
-			body:           ``,
+			body:           `{"position": "Backend Dev", "company": ""}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedJSON: map[string]interface{}{
-				"error": "Invalid request body",
-			},
+			expectedErrMsg: "Position and Company are required",
 		},
 		{
-			name:           "GET method returns 405",
-			method:         http.MethodGet,
-			body:           ``,
-			expectedStatus: http.StatusMethodNotAllowed,
-			expectedJSON: map[string]interface{}{
-				"error": "Method Not Allowed",
-			},
+			name:           "Error: Database failure",
+			method:         http.MethodPost,
+			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			mockErr:        context.DeadlineExceeded,
+			expectedStatus: http.StatusInternalServerError,
+			expectedErrMsg: "Failed to create job",
 		},
 		{
-			name:           "PUT method returns 405",
-			method:         http.MethodPut,
-			body:           ``,
-			expectedStatus: http.StatusMethodNotAllowed,
-			expectedJSON: map[string]interface{}{
-				"error": "Method Not Allowed",
-			},
+			name:           "Error: Invalid JSON",
+			method:         http.MethodPost,
+			body:           `{invalid-json}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Invalid request body",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockJobRepo{err: tt.mockErr}
+			h := handler.NewJobHandler(mockRepo)
+
 			req := httptest.NewRequest(tt.method, "/jobs", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
 			h.CreateJob(w, req)
 
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.expectedStatus {
-				t.Fatalf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 
-			if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
-				t.Errorf("expected Content-Type application/json, got %q", ct)
-			}
-
-			if tt.expectedJSON != nil {
-				var respBody map[string]interface{}
-
-				if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
-					t.Fatalf("failed to decode JSON response: %v", err)
+			if tt.expectedStatus == http.StatusCreated {
+				var job repository.Job
+				if err := json.NewDecoder(w.Body).Decode(&job); err != nil {
+					t.Fatalf("failed to decode job: %v", err)
 				}
 
-				for k, v := range tt.expectedJSON {
-					if respBody[k] != v {
-						t.Errorf("expected JSON %s=%v, got %v", k, v, respBody[k])
-					}
+				if job.ID != tt.expectedID {
+					t.Errorf("expected job ID %d, got %d", tt.expectedID, job.ID)
+				}
+			} else {
+				var errResp map[string]string
+				json.NewDecoder(w.Body).Decode(&errResp)
+
+				if errResp["error"] != tt.expectedErrMsg {
+					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
 				}
 			}
 		})
@@ -132,35 +128,40 @@ func TestGetJobs(t *testing.T) {
 		mockJobs       []repository.Job
 		mockErr        error
 		expectedStatus int
+		expectedCount  int
+		expectedErrMsg string
 	}{
 		{
-			name:   "GET method return 200",
+			name:   "Success: Multiple jobs found",
 			method: http.MethodGet,
 			mockJobs: []repository.Job{
 				{
 					ID:       1,
-					Position: "dev",
-					Company:  "test",
+					Position: "Backend Dev",
+					Company:  "Google",
+				},
+				{
+					ID:       2,
+					Position: "Fullstack Dev",
+					Company:  "Meta",
 				},
 			},
 			expectedStatus: http.StatusOK,
+			expectedCount:  2,
 		},
 		{
-			name:           "GET returns empty array when no jobs",
+			name:           "Success: No jobs found",
 			method:         http.MethodGet,
 			mockJobs:       []repository.Job{},
 			expectedStatus: http.StatusOK,
+			expectedCount:  0,
 		},
 		{
-			name:           "GET request, repo error returns 500",
+			name:           "Error: Database failure",
 			method:         http.MethodGet,
 			mockErr:        context.DeadlineExceeded,
 			expectedStatus: http.StatusInternalServerError,
-		},
-		{
-			name:           "POST method return 405",
-			method:         http.MethodPost,
-			expectedStatus: http.StatusMethodNotAllowed,
+			expectedErrMsg: "Failed to fetch jobs",
 		},
 	}
 
@@ -178,43 +179,34 @@ func TestGetJobs(t *testing.T) {
 
 			h.GetJobs(w, req)
 
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.expectedStatus {
-				t.Fatalf("expected %d, got %d", tt.expectedStatus, resp.StatusCode)
+			if w.Code != tt.expectedStatus {
+				t.Fatalf("expected %d, got %d", tt.expectedStatus, w.Code)
 			}
 
-			if resp.Header.Get("Content-Type") != "application/json" {
+			if ct := w.Header().Get("Content-Type"); ct != "application/json" {
 				t.Fatalf("expected Content-Type application/json")
 			}
 
 			if tt.expectedStatus == http.StatusOK {
 				var jobs []repository.Job
 
-				if err := json.NewDecoder(resp.Body).Decode(&jobs); err != nil {
+				if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
 					t.Fatalf("failed to decode response: %v", err)
 				}
 
-				if len(jobs) != len(tt.mockJobs) {
-					t.Fatalf("expected %d jobs, got %d", len(tt.mockJobs), len(jobs))
+				if len(jobs) != tt.expectedCount {
+					t.Errorf("expected %d jobs, got %d", tt.expectedCount, len(jobs))
 				}
 
-				for i := range jobs {
-					if jobs[i] != tt.mockJobs[i] {
-						t.Errorf("expected %+v, got %+v", tt.mockJobs[i], jobs[i])
-					}
+				if tt.expectedCount == 0 && w.Body.String() == "null\n" {
+					t.Errorf("expected empty array [], got null")
 				}
-			}
+			} else {
+				var errResp map[string]string
+				json.NewDecoder(w.Body).Decode(&errResp)
 
-			if tt.expectedStatus == http.StatusInternalServerError || tt.expectedStatus == http.StatusMethodNotAllowed {
-				var body map[string]string
-				if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-					t.Fatalf("failed to decode error response: %v", err)
-				}
-
-				if body["error"] == "" {
-					t.Errorf("expected error message in response")
+				if errResp["error"] != tt.expectedErrMsg {
+					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
 				}
 			}
 		})

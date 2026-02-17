@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
@@ -21,6 +22,13 @@ func NewJobHandler(repo JobRepo) *JobHandler {
 	return &JobHandler{Repo: repo}
 }
 
+func (h *JobHandler) errorResponse(w http.ResponseWriter, status int, message string) {
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{
+		"error": message,
+	})
+}
+
 type CreateJobRequest struct {
 	Position string `json:"position"`
 	Company  string `json:"company"`
@@ -29,34 +37,23 @@ type CreateJobRequest struct {
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Method Not Allowed",
-		})
+	var reqBody CreateJobRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
 
 		return
 	}
 
-	var reqBody CreateJobRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
-
+	if strings.TrimSpace(reqBody.Position) == "" || strings.TrimSpace(reqBody.Company) == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Position and Company are required")
 		return
-
 	}
 
 	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Failed to create job",
-		})
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to create job")
 
 		return
 	}
@@ -68,24 +65,16 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Method Not Allowed",
-		})
+	jobs, err := h.Repo.GetJobs(r.Context())
+
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to fetch jobs")
 
 		return
 	}
 
-	jobs, err := h.Repo.GetJobs(r.Context())
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Failed to fetch jobs",
-		})
-
-		return
+	if jobs == nil {
+		jobs = []repository.Job{}
 	}
 
 	w.WriteHeader(http.StatusOK)
