@@ -37,6 +37,18 @@ func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
 	return m.jobs, nil
 }
 
+func (m *mockJobRepo) UpdateJob(_ context.Context, id int32, position, company string) (repository.Job, error) {
+	if m.err != nil {
+		return repository.Job{}, m.err
+	}
+
+	return repository.Job{
+		ID:       id,
+		Position: position,
+		Company:  company,
+	}, nil
+}
+
 func TestCreateJob(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -200,6 +212,90 @@ func TestGetJobs(t *testing.T) {
 
 				if tt.expectedCount == 0 && w.Body.String() == "null\n" {
 					t.Errorf("expected empty array [], got null")
+				}
+			} else {
+				var errResp map[string]string
+				json.NewDecoder(w.Body).Decode(&errResp)
+
+				if errResp["error"] != tt.expectedErrMsg {
+					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
+				}
+			}
+		})
+	}
+}
+
+func TestUpdateJob(t *testing.T) {
+	tests := []struct {
+		name           string
+		jobID          string
+		body           string
+		expectedStatus int
+		expectedID     int32
+		expectedErrMsg string
+	}{
+		{
+			name:           "Success: Valid Update",
+			jobID:          "1",
+			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			expectedStatus: http.StatusOK,
+			expectedID:     1,
+		},
+		{
+			name:           "Error: Invalid ID (Non-numeric)",
+			jobID:          "abc",
+			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Invalid job ID",
+		},
+		{
+			name:           "Error: Empty Position",
+			jobID:          "1",
+			body:           `{"position": "", "company": "Test Company"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Position and Company are required",
+		},
+		{
+			name:           "Error: Empty Company",
+			jobID:          "1",
+			body:           `{"position": "Backend Dev", "company": ""}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Position and Company are required",
+		},
+		{
+			name:           "Error: Invalid JSON",
+			jobID:          "1",
+			body:           `{invalid-json}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Invalid request body",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockJobRepo{}
+
+			h := handler.NewJobHandler(mockRepo)
+
+			req := httptest.NewRequest(http.MethodPut, "/jobs/"+tt.jobID, strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+
+			req.SetPathValue("id", tt.jobID)
+
+			h.UpdateJob(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, w.Code)
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				var job repository.Job
+				if err := json.NewDecoder(w.Body).Decode(&job); err != nil {
+					t.Fatalf("failed to decode job: %v", err)
+				}
+
+				if job.ID != tt.expectedID {
+					t.Errorf("expected job ID %d, got %d", tt.expectedID, job.ID)
 				}
 			} else {
 				var errResp map[string]string

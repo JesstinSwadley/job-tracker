@@ -61,10 +61,11 @@ func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, erro
 	return i, err
 }
 
-const updateJob = `-- name: UpdateJob :exec
+const updateJob = `-- name: UpdateJob :one
 UPDATE jobs
 SET position = $2, company = $3
 WHERE id = $1
+RETURNING id, position, company
 `
 
 type UpdateJobParams struct {
@@ -73,7 +74,9 @@ type UpdateJobParams struct {
 	Company  string `json:"company"`
 }
 
-func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) error {
-	_, err := q.db.Exec(ctx, updateJob, arg.ID, arg.Position, arg.Company)
-	return err
+func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, error) {
+	row := q.db.QueryRow(ctx, updateJob, arg.ID, arg.Position, arg.Company)
+	var i Job
+	err := row.Scan(&i.ID, &i.Position, &i.Company)
+	return i, err
 }

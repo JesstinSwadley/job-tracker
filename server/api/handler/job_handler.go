@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
@@ -12,6 +13,7 @@ import (
 type JobRepo interface {
 	InsertJob(ctx context.Context, position, company string) (repository.Job, error)
 	GetJobs(ctx context.Context) ([]repository.Job, error)
+	UpdateJob(ctx context.Context, id int32, position, company string) (repository.Job, error)
 }
 
 type JobHandler struct {
@@ -81,30 +83,46 @@ func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jobs)
 }
 
-// // func UpdateJob(w http.ResponseWriter, r *http.Request) {
-// // 	var job respository.Job
+func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// // 	decoder := json.NewDecoder(r.Body)
+	idStr := r.PathValue("id")
 
-// // 	if err := decoder.Decode(&job); err != nil {
-// // 		panic(err)
-// // 	}
+	parsedID, err := strconv.ParseInt(idStr, 10, 32)
 
-// // 	updateJob := respository.UpdateJobParams(job)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid job ID")
 
-// // 	ctx := r.Context()
-// // 	dbConn := database.DatabaseConnection()
-// // 	repo := respository.New(dbConn)
+		return
+	}
 
-// // 	err := repo.UpdateJob(ctx, updateJob)
+	id := int32(parsedID)
 
-// // 	if err != nil {
-// // 		panic(err)
-// // 	}
+	var reqBody CreateJobRequest
 
-// // 	w.WriteHeader(200)
-// // 	w.Write([]byte("Job has been updated"))
-// // }
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
+
+		return
+	}
+
+	if strings.TrimSpace(reqBody.Position) == "" || strings.TrimSpace(reqBody.Company) == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Position and Company are required")
+
+		return
+	}
+
+	job, err := h.Repo.UpdateJob(r.Context(), id, reqBody.Position, reqBody.Company)
+
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to update job")
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(job)
+}
 
 // // func DeleteJob(w http.ResponseWriter, r *http.Request) {
 // // 	var job respository.Job

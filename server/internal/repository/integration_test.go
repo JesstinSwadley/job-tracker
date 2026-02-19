@@ -91,3 +91,54 @@ func TestGetJobs_Integration(t *testing.T) {
 		t.Errorf("Expected %d jobs, got %d", len(jobsToCreate), len(jobs))
 	}
 }
+
+func TestUpdateJob_Integration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	initialJob, err := testQueries.InsertJob(ctx, InsertJobParams{
+		Position: "Job A", Company: "Company A",
+	})
+
+	if err != nil {
+		t.Fatalf("Failed to insert initial job for update test: %v", err)
+	}
+
+	updateArg := UpdateJobParams{
+		ID:       initialJob.ID,
+		Position: "Update Job",
+		Company:  "Update Company",
+	}
+
+	updatedJob, err := testQueries.UpdateJob(ctx, updateArg)
+
+	if err != nil {
+		t.Fatalf("Failed to execute UpdateJob: %v", err)
+	}
+
+	if updatedJob.ID != initialJob.ID {
+		t.Errorf("Expected ID %d, got %d", initialJob.ID, updatedJob.ID)
+	}
+
+	if updatedJob.Position != updateArg.Position {
+		t.Errorf("Expected position %s, got %s", updateArg.Position, updatedJob.Position)
+	}
+
+	fetchedJob, err := testQueries.GetJobs(ctx)
+
+	if err != nil {
+		t.Fatalf("Failed to fetch jobs after update: %v", err)
+	}
+
+	found := false
+	for _, j := range fetchedJob {
+		if j.ID == updatedJob.ID && j.Position == "Update Job" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Error("Could not find the updated job in the database")
+	}
+}

@@ -6,10 +6,11 @@ RETURNING *;
 -- name: GetJobs :many
 SELECT * FROM jobs;
 
--- name: UpdateJob :exec
+-- name: UpdateJob :one
 UPDATE jobs
 SET position = $2, company = $3
-WHERE id = $1;
+WHERE id = $1
+RETURNING *;
 
 -- name: DeleteJob :exec
 DELETE FROM jobs

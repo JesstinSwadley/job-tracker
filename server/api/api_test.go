@@ -31,6 +31,14 @@ func (*mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
 	}, nil
 }
 
+func (*mockJobRepo) UpdateJob(_ context.Context, id int32, position, company string) (repository.Job, error) {
+	return repository.Job{
+		ID:       id,
+		Position: position,
+		Company:  company,
+	}, nil
+}
+
 func TestApiRouting(t *testing.T) {
 	mockRepo := &mockJobRepo{}
 	app := api.ApiRouter(mockRepo)
@@ -57,6 +65,13 @@ func TestApiRouting(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
+			name:           "PUT jobs works through v1 prefix",
+			method:         http.MethodPut,
+			url:            "/api/v1/jobs/1",
+			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			expectedStatus: http.StatusOK,
+		},
+		{
 			name:           "Route not found returns 404",
 			method:         http.MethodGet,
 			url:            "/api/v1/wrong-route",
@@ -65,7 +80,7 @@ func TestApiRouting(t *testing.T) {
 		},
 		{
 			name:           "Incorrect method returns 405 via Handler Guard",
-			method:         http.MethodPut,
+			method:         http.MethodPatch,
 			url:            "/api/v1/jobs",
 			body:           `{}`,
 			expectedStatus: http.StatusMethodNotAllowed,
