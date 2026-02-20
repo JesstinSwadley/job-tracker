@@ -9,44 +9,59 @@ import (
 	"context"
 )
 
-const findUserById = `-- name: FindUserById :one
-SELECT id, username, hash_password FROM users
-WHERE id = $1
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, hash_password, created_at FROM users
+WHERE email = $1 LIMIT 1
 `
 
-func (q *Queries) FindUserById(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRow(ctx, findUserById, id)
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.HashPassword,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
-const findUserByUsername = `-- name: FindUserByUsername :one
-SELECT id, username, hash_password FROM users
-WHERE username = $1
+const getUserById = `-- name: GetUserById :one
+SELECT id, email, hash_password, created_at FROM users
+WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) FindUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRow(ctx, findUserByUsername, username)
+func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRow(ctx, getUserById, id)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.HashPassword,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const insertUser = `-- name: InsertUser :one
-INSERT INTO users (username, hash_password)
+INSERT INTO users (email, hash_password)
 VALUES ($1, $2)
-RETURNING id, username, hash_password
+RETURNING id, email, hash_password, created_at
 `
 
 type InsertUserParams struct {
-	Username     string `json:"username"`
+	Email        string `json:"email"`
 	HashPassword string `json:"hash_password"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, insertUser, arg.Username, arg.HashPassword)
+	row := q.db.QueryRow(ctx, insertUser, arg.Email, arg.HashPassword)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.HashPassword)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.HashPassword,
+		&i.CreatedAt,
+	)
 	return i, err
 }

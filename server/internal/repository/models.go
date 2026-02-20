@@ -4,14 +4,20 @@
 
 package repository
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type Job struct {
 	ID       int32  `json:"id"`
 	Position string `json:"position"`
 	Company  string `json:"company"`
+	UserID   int32  `json:"user_id"`
 }
 
 type User struct {
-	ID           int32  `json:"id"`
-	Username     string `json:"username"`
-	HashPassword string `json:"hash_password"`
+	ID           int32              `json:"id"`
+	Email        string             `json:"email"`
+	HashPassword string             `json:"hash_password"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
