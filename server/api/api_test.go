@@ -39,6 +39,10 @@ func (*mockJobRepo) UpdateJob(_ context.Context, id int32, position, company str
 	}, nil
 }
 
+func (*mockJobRepo) DeleteJob(_ context.Context, id int32) error {
+	return nil
+}
+
 func TestApiRouting(t *testing.T) {
 	mockRepo := &mockJobRepo{}
 	app := api.ApiRouter(mockRepo)
@@ -70,6 +74,12 @@ func TestApiRouting(t *testing.T) {
 			url:            "/api/v1/jobs/1",
 			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
 			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Delete jobs works through v1 prefix",
+			method:         http.MethodDelete,
+			url:            "/api/v1/jobs/1",
+			expectedStatus: http.StatusNoContent,
 		},
 		{
 			name:           "Route not found returns 404",

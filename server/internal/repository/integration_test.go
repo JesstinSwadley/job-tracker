@@ -142,3 +142,26 @@ func TestUpdateJob_Integration(t *testing.T) {
 		t.Error("Could not find the updated job in the database")
 	}
 }
+
+func TestDeleteJob_Integration(t *testing.T) {
+	ctx := context.Background()
+
+	job, _ := testQueries.InsertJob(ctx, InsertJobParams{
+		Position: "To Be Deleted",
+		Company:  "Ghost Co.",
+	})
+
+	err := testQueries.DeleteJob(ctx, job.ID)
+
+	if err != nil {
+		t.Fatalf("Failed to delete job: %v", err)
+	}
+
+	jobs, _ := testQueries.GetJobs(ctx)
+
+	for _, j := range jobs {
+		if j.ID == job.ID {
+			t.Errorf("Job with ID %d still exists in database", job.ID)
+		}
+	}
+}

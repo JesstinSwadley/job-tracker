@@ -49,6 +49,10 @@ func (m *mockJobRepo) UpdateJob(_ context.Context, id int32, position, company s
 	}, nil
 }
 
+func (m *mockJobRepo) DeleteJob(ctx context.Context, id int32) error {
+	return m.err
+}
+
 func TestCreateJob(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -301,6 +305,61 @@ func TestUpdateJob(t *testing.T) {
 				var errResp map[string]string
 				json.NewDecoder(w.Body).Decode(&errResp)
 
+				if errResp["error"] != tt.expectedErrMsg {
+					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteJob(t *testing.T) {
+	tests := []struct {
+		name           string
+		jobID          string
+		mockErr        error
+		expectedStatus int
+		expectedErrMsg string
+	}{
+		{
+			name:           "Success: Valid Delete",
+			jobID:          "1",
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "Error: Invalid ID",
+			jobID:          "abc",
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Invalid job ID",
+		},
+		{
+			name:           "Error: Database failure",
+			jobID:          "1",
+			mockErr:        context.DeadlineExceeded,
+			expectedStatus: http.StatusInternalServerError,
+			expectedErrMsg: "Failed to delete job",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockJobRepo{err: tt.mockErr}
+			h := handler.NewJobHandler(mockRepo)
+
+			req := httptest.NewRequest(http.MethodDelete, "/jobs/"+tt.jobID, nil)
+			w := httptest.NewRecorder()
+
+			req.SetPathValue("id", tt.jobID)
+
+			h.DeleteJob(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
+			}
+
+			if tt.expectedStatus != http.StatusNoContent && tt.expectedStatus != http.StatusOK {
+				var errResp map[string]string
+				json.NewDecoder(w.Body).Decode(&errResp)
 				if errResp["error"] != tt.expectedErrMsg {
 					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
 				}

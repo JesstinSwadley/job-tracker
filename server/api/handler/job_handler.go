@@ -14,6 +14,7 @@ type JobRepo interface {
 	InsertJob(ctx context.Context, position, company string) (repository.Job, error)
 	GetJobs(ctx context.Context) ([]repository.Job, error)
 	UpdateJob(ctx context.Context, id int32, position, company string) (repository.Job, error)
+	DeleteJob(ctx context.Context, id int32) error
 }
 
 type JobHandler struct {
@@ -124,24 +125,26 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
-// // func DeleteJob(w http.ResponseWriter, r *http.Request) {
-// // 	var job respository.Job
+func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// // 	decoder := json.NewDecoder(r.Body)
+	idStr := r.PathValue("id")
 
-// // 	if err := decoder.Decode(&job); err != nil {
-// // 		panic(err)
-// // 	}
+	parsedID, err := strconv.ParseInt(idStr, 10, 32)
 
-// // 	ctx := r.Context()
-// // 	dbConn := database.DatabaseConnection()
-// // 	repo := respository.New(dbConn)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid job ID")
 
-// // 	if err := repo.DeleteJob(ctx, job.ID); err != nil {
-// // 		panic(err)
-// // 	}
+		return
+	}
 
-// // 	w.WriteHeader(200)
-// // 	w.Header().Add("Content-Type", "application/json")
-// // 	w.Write([]byte("Job has been deleted"))
-// // }
+	id := int32(parsedID)
+
+	err = h.Repo.DeleteJob(r.Context(), id)
+
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to delete job")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
