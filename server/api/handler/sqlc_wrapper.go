@@ -28,3 +28,7 @@ func (s *SQLCJobRepo) UpdateJob(ctx context.Context, id int32, position, company
 		Company:  company,
 	})
 }
+
+func (s *SQLCJobRepo) DeleteJob(ctx context.Context, id int32) error {
+	return s.Queries.DeleteJob(ctx, id)
+}
