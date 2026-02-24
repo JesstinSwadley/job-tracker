@@ -2,42 +2,9 @@ package repository
 
 import (
 	"context"
-	"log"
-	"os"
 	"testing"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-var testQueries *Queries
-var testPool *pgxpool.Pool
-
-func TestMain(m *testing.M) {
-	ctx := context.Background()
-
-	connStr := os.Getenv("TEST_DATABASE_URL")
-	if connStr == "" {
-		connStr = "postgresql://postgres:postgres@localhost:5432/job_tracker_test?sslmode=disable"
-	}
-
-	var err error
-	testPool, err = pgxpool.New(ctx, connStr)
-	if err != nil {
-		log.Fatalf("cannot connect to test db: %v", err)
-	}
-
-	if err := testPool.Ping(ctx); err != nil {
-		log.Fatalf("db ping failed: %v", err)
-	}
-
-	testQueries = New(testPool)
-
-	code := m.Run()
-
-	testPool.Close()
-	os.Exit(code)
-}
 
 func TestInsertJob_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -46,6 +13,7 @@ func TestInsertJob_Integration(t *testing.T) {
 	arg := InsertJobParams{
 		Position: "Backend Developer",
 		Company:  "Test Company",
+		UserID:   tempUserID,
 	}
 
 	job, err := testQueries.InsertJob(ctx, arg)
@@ -81,7 +49,8 @@ func TestGetJobs_Integration(t *testing.T) {
 		}
 	}
 
-	jobs, err := testQueries.GetJobs(ctx)
+	const tempUserID = 1
+	jobs, err := testQueries.GetJobs(ctx, tempUserID)
 
 	if err != nil {
 		t.Fatalf("Failed to fetch jobs: %v", err)
@@ -108,6 +77,7 @@ func TestUpdateJob_Integration(t *testing.T) {
 		ID:       initialJob.ID,
 		Position: "Update Job",
 		Company:  "Update Company",
+		UserID:   tempUserID,
 	}
 
 	updatedJob, err := testQueries.UpdateJob(ctx, updateArg)
@@ -124,7 +94,7 @@ func TestUpdateJob_Integration(t *testing.T) {
 		t.Errorf("Expected position %s, got %s", updateArg.Position, updatedJob.Position)
 	}
 
-	fetchedJob, err := testQueries.GetJobs(ctx)
+	fetchedJob, err := testQueries.GetJobs(ctx, tempUserID)
 
 	if err != nil {
 		t.Fatalf("Failed to fetch jobs after update: %v", err)
@@ -149,15 +119,19 @@ func TestDeleteJob_Integration(t *testing.T) {
 	job, _ := testQueries.InsertJob(ctx, InsertJobParams{
 		Position: "To Be Deleted",
 		Company:  "Ghost Co.",
+		UserID:   tempUserID,
 	})
 
-	err := testQueries.DeleteJob(ctx, job.ID)
+	err := testQueries.DeleteJob(ctx, DeleteJobParams{
+		ID:     job.ID,
+		UserID: tempUserID,
+	})
 
 	if err != nil {
 		t.Fatalf("Failed to delete job: %v", err)
 	}
 
-	jobs, _ := testQueries.GetJobs(ctx)
+	jobs, _ := testQueries.GetJobs(ctx, tempUserID)
 
 	for _, j := range jobs {
 		if j.ID == job.ID {

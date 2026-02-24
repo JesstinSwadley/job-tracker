@@ -10,16 +10,16 @@ import (
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, hash_password, created_at FROM users
-WHERE email = $1 LIMIT 1
+SELECT id, username, hash_password, created_at FROM users
+WHERE username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
+func (q *Queries) GetUserByEmail(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, username)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
+		&i.Username,
 		&i.HashPassword,
 		&i.CreatedAt,
 	)
@@ -27,7 +27,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, email, hash_password, created_at FROM users
+SELECT id, username, hash_password, created_at FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -36,7 +36,7 @@ func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
+		&i.Username,
 		&i.HashPassword,
 		&i.CreatedAt,
 	)
@@ -44,22 +44,22 @@ func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
 }
 
 const insertUser = `-- name: InsertUser :one
-INSERT INTO users (email, hash_password)
+INSERT INTO users (username, hash_password)
 VALUES ($1, $2)
-RETURNING id, email, hash_password, created_at
+RETURNING id, username, hash_password, created_at
 `
 
 type InsertUserParams struct {
-	Email        string `json:"email"`
+	Username     string `json:"username"`
 	HashPassword string `json:"hash_password"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, insertUser, arg.Email, arg.HashPassword)
+	row := q.db.QueryRow(ctx, insertUser, arg.Username, arg.HashPassword)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
+		&i.Username,
 		&i.HashPassword,
 		&i.CreatedAt,
 	)

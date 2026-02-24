@@ -10,6 +10,8 @@ type SQLCJobRepo struct {
 	Queries *repository.Queries
 }
 
+const tempUserID int32 = 1
+
 func (s *SQLCJobRepo) InsertJob(ctx context.Context, position, company string) (repository.Job, error) {
 	return s.Queries.InsertJob(ctx, repository.InsertJobParams{
 		Position: position,
@@ -18,7 +20,7 @@ func (s *SQLCJobRepo) InsertJob(ctx context.Context, position, company string) (
 }
 
 func (s *SQLCJobRepo) GetJobs(ctx context.Context) ([]repository.Job, error) {
-	return s.Queries.GetJobs(ctx)
+	return s.Queries.GetJobs(ctx, tempUserID)
 }
 
 func (s *SQLCJobRepo) UpdateJob(ctx context.Context, id int32, position, company string) (repository.Job, error) {
@@ -30,5 +32,8 @@ func (s *SQLCJobRepo) UpdateJob(ctx context.Context, id int32, position, company
 }
 
 func (s *SQLCJobRepo) DeleteJob(ctx context.Context, id int32) error {
-	return s.Queries.DeleteJob(ctx, id)
+	return s.Queries.DeleteJob(ctx, repository.DeleteJobParams{
+		ID:     id,
+		UserID: tempUserID,
+	})
 }

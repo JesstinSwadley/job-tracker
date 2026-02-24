@@ -17,7 +17,7 @@ type Job struct {
 
 type User struct {
 	ID           int32              `json:"id"`
-	Email        string             `json:"email"`
+	Username     string             `json:"username"`
 	HashPassword string             `json:"hash_password"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }

@@ -11,10 +11,10 @@ import (
 )
 
 type JobRepo interface {
-	InsertJob(ctx context.Context, position, company string) (repository.Job, error)
-	GetJobs(ctx context.Context) ([]repository.Job, error)
-	UpdateJob(ctx context.Context, id int32, position, company string) (repository.Job, error)
-	DeleteJob(ctx context.Context, id int32) error
+	InsertJob(ctx context.Context, position, company string, userID int32) (repository.Job, error)
+	GetJobs(ctx context.Context, userID int32) ([]repository.Job, error)
+	UpdateJob(ctx context.Context, id, userID int32, position, company string) (repository.Job, error)
+	DeleteJob(ctx context.Context, id, userID int32) error
 }
 
 type JobHandler struct {
