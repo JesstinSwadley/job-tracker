@@ -17,7 +17,7 @@ type mockJobRepo struct {
 	err  error
 }
 
-func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (repository.Job, error) {
+func (m *mockJobRepo) InsertJob(_ context.Context, position, company string, userID int32) (repository.Job, error) {
 	if m.err != nil {
 		return repository.Job{}, m.err
 	}
@@ -29,7 +29,7 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string) (re
 	}, nil
 }
 
-func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
+func (m *mockJobRepo) GetJobs(_ context.Context, userID int32) ([]repository.Job, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -37,7 +37,7 @@ func (m *mockJobRepo) GetJobs(_ context.Context) ([]repository.Job, error) {
 	return m.jobs, nil
 }
 
-func (m *mockJobRepo) UpdateJob(_ context.Context, id int32, position, company string) (repository.Job, error) {
+func (m *mockJobRepo) UpdateJob(_ context.Context, id, userID int32, position, company string) (repository.Job, error) {
 	if m.err != nil {
 		return repository.Job{}, m.err
 	}
@@ -49,7 +49,7 @@ func (m *mockJobRepo) UpdateJob(_ context.Context, id int32, position, company s
 	}, nil
 }
 
-func (m *mockJobRepo) DeleteJob(ctx context.Context, id int32) error {
+func (m *mockJobRepo) DeleteJob(ctx context.Context, id, userID int32) error {
 	return m.err
 }
 

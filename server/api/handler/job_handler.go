@@ -35,6 +35,7 @@ func (h *JobHandler) errorResponse(w http.ResponseWriter, status int, message st
 type CreateJobRequest struct {
 	Position string `json:"position"`
 	Company  string `json:"company"`
+	UserID   int32  `json:"user_id"`
 }
 
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +54,7 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company)
+	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company, reqBody.UserID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to create job")
@@ -68,7 +69,7 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	jobs, err := h.Repo.GetJobs(r.Context())
+	jobs, err := h.Repo.GetJobs(r.Context(), tempUserID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to fetch jobs")
@@ -113,7 +114,7 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Repo.UpdateJob(r.Context(), id, reqBody.Position, reqBody.Company)
+	job, err := h.Repo.UpdateJob(r.Context(), id, tempUserID, reqBody.Position, reqBody.Company)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to update job")
@@ -140,7 +141,7 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	id := int32(parsedID)
 
-	err = h.Repo.DeleteJob(r.Context(), id)
+	err = h.Repo.DeleteJob(r.Context(), id, tempUserID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to delete job")
