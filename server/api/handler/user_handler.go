@@ -46,8 +46,23 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(reqBody.Username) == "" || strings.TrimSpace(reqBody.Password) == "" {
+	username := strings.TrimSpace(reqBody.Username)
+	password := reqBody.Password
+
+	if username == "" || password == "" {
 		h.errorResponse(w, http.StatusBadRequest, "Username and Password are required")
+
+		return
+	}
+
+	if len(password) < 8 {
+		h.errorResponse(w, http.StatusBadRequest, "Password must be at least 8 characters")
+
+		return
+	}
+
+	if len(password) > 72 {
+		h.errorResponse(w, http.StatusBadRequest, "Password is too long")
 
 		return
 	}

@@ -45,6 +45,18 @@ func TestRegisterUser(t *testing.T) {
 			expectedID:     1,
 		},
 		{
+			name:           "Error: Password Too Short",
+			body:           `{"username": "testuser", "password": "123"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Password must be at least 8 characters",
+		},
+		{
+			name:           "Error: Password Too Long (Bcrypt Limit)",
+			body:           `{"username": "testuser", "password": "` + strings.Repeat("a", 73) + `"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Password is too long",
+		},
+		{
 			name:           "Error: Empty Username",
 			body:           `{"username": "", "password": "securepassword123"}`,
 			expectedStatus: http.StatusBadRequest,
@@ -103,6 +115,10 @@ func TestRegisterUser(t *testing.T) {
 
 				if user.ID != tt.expectedID {
 					t.Errorf("expected user ID %d, got %d", tt.expectedID, user.ID)
+				}
+
+				if user.HashPassword != "" {
+					t.Error("Security violation: password hash was leaked in JSON response")
 				}
 			} else {
 				var errResp map[string]string
