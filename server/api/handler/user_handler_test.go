@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,23 +11,20 @@ import (
 
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockUserRepo struct {
-	user []repository.User
-	err  error
+	insertUserFn        func(ctx context.Context, arg repository.InsertUserParams) (repository.User, error)
+	getUserByUsernameFn func(ctx context.Context, username string) (repository.User, error)
 }
 
-func (m *mockUserRepo) InsertUser(_ context.Context, arg repository.InsertUserParams) (repository.User, error) {
-	if m.err != nil {
-		return repository.User{}, m.err
-	}
+func (m *mockUserRepo) InsertUser(ctx context.Context, arg repository.InsertUserParams) (repository.User, error) {
+	return m.insertUserFn(ctx, arg)
+}
 
-	return repository.User{
-		ID:           1,
-		Username:     arg.Username,
-		HashPassword: arg.HashPassword,
-	}, nil
+func (m *mockUserRepo) GetUserByUsername(ctx context.Context, username string) (repository.User, error) {
+	return m.getUserByUsernameFn(ctx, username)
 }
 
 func TestRegisterUser(t *testing.T) {
@@ -92,7 +90,16 @@ func TestRegisterUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockUserRepo{err: tt.mockErr}
+			mockRepo := &mockUserRepo{
+				insertUserFn: func(ctx context.Context, arg repository.InsertUserParams) (repository.User, error) {
+					if tt.mockErr != nil {
+						return repository.User{}, tt.mockErr
+					}
+
+					return repository.User{ID: 1, Username: arg.Username, HashPassword: arg.HashPassword}, nil
+				},
+			}
+
 			h := NewUserHandler(mockRepo)
 
 			req := httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(tt.body))
@@ -126,6 +133,83 @@ func TestRegisterUser(t *testing.T) {
 
 				if errResp["error"] != tt.expectedErrMsg {
 					t.Errorf("expected error %q, got %q", tt.expectedErrMsg, errResp["error"])
+				}
+			}
+		})
+	}
+}
+
+func TestLoginUser(t *testing.T) {
+	correctPassword := "securepassword123"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(correctPassword), 10)
+
+	tests := []struct {
+		name           string
+		body           string
+		mockUser       repository.User
+		mockErr        error
+		expectedStatus int
+		expectedErrMsg string
+	}{
+		{
+			name: "Success: Valid Login",
+			body: `{"username": "testuser", "password": "securepassword123"}`,
+			mockUser: repository.User{
+				ID:           1,
+				Username:     "testuser",
+				HashPassword: string(hashedPassword),
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Error: User Not Found",
+			body:           `{"username": "nonexistent", "password": "password123"}`,
+			mockErr:        errors.New("no rows in result set"),
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Invalid username or password",
+		},
+		{
+			name: "Error: Incorrect Password",
+			body: `{"username": "testuser", "password": "wrongpassword"}`,
+			mockUser: repository.User{
+				Username:     "testuser",
+				HashPassword: string(hashedPassword),
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Invalid username or password",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockUserRepo{
+				getUserByUsernameFn: func(ctx context.Context, username string) (repository.User, error) {
+					if tt.mockErr != nil {
+						return repository.User{}, tt.mockErr
+					}
+					return tt.mockUser, nil
+				},
+			}
+
+			h := NewUserHandler(mockRepo)
+
+			req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+
+			h.Login(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectedStatus, w.Code)
+			}
+
+			if tt.expectedErrMsg != "" {
+				var errResp map[string]string
+				json.NewDecoder(w.Body).Decode(&errResp)
+
+				if errResp["error"] != tt.expectedErrMsg {
+					t.Errorf("%s: expected error %q, got %q", tt.name, tt.expectedErrMsg, errResp["error"])
 				}
 			}
 		})

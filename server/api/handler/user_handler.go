@@ -13,6 +13,7 @@ import (
 
 type UserRepo interface {
 	InsertUser(ctx context.Context, arg repository.InsertUserParams) (repository.User, error)
+	GetUserByUsername(ctx context.Context, username string) (repository.User, error)
 }
 
 type UserHandler struct {
@@ -31,6 +32,11 @@ func (h *UserHandler) errorResponse(w http.ResponseWriter, status int, message s
 }
 
 type RegisterRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -67,7 +73,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), 10)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Internal server error")
@@ -76,7 +82,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.Repo.InsertUser(r.Context(), repository.InsertUserParams{
-		Username:     reqBody.Username,
+		Username:     username,
 		HashPassword: string(hashedPassword),
 	})
 
@@ -99,114 +105,34 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"net/http"
-// 	"strconv"
-// 	"time"
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	"github.com/JesstinSwadley/job-tracker/internal/database"
-// 	"github.com/JesstinSwadley/job-tracker/internal/respository"
-// 	"github.com/golang-jwt/jwt/v5"
-// 	"golang.org/x/crypto/bcrypt"
-// )
+	var reqBody LoginRequest
 
-// const secretKey = "secret"
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
 
-// func RegisterUser(w http.ResponseWriter, r *http.Request) {
-// 	var user respository.User
+		return
+	}
 
-// 	ctx := r.Context()
-// 	dbConn := database.DatabaseConnection()
-// 	repo := respository.New(dbConn)
+	user, err := h.Repo.GetUserByUsername(r.Context(), reqBody.Username)
 
-// 	decoder := json.NewDecoder(r.Body)
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Invalid username or password")
 
-// 	if err := decoder.Decode(&user); err != nil {
-// 		fmt.Print(err)
-// 		w.WriteHeader(400)
-// 		w.Write([]byte("unable to register user"))
-// 		return
-// 	}
+		return
+	}
 
-// 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.HashPassword), 10)
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashPassword), []byte(reqBody.Password))
 
-// 	if err != nil {
-// 		fmt.Print(err)
-// 		w.WriteHeader(400)
-// 		w.Write([]byte("unable to register user"))
-// 		return
-// 	}
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Invalid username or password")
 
-// 	u, err := repo.InsertUser(ctx, respository.InsertUserParams{
-// 		Username:     user.Username,
-// 		HashPassword: string(bytes),
-// 	})
+		return
+	}
 
-// 	if err != nil {
-// 		fmt.Print(err)
-// 		w.WriteHeader(400)
-// 		w.Write([]byte("unable to register user"))
-// 		return
-// 	}
-
-// 	w.WriteHeader(201)
-// 	w.Write([]byte(u.Username + " has been registered"))
-// }
-
-// func LoginUser(w http.ResponseWriter, r *http.Request) {
-// 	var user respository.User
-
-// 	ctx := r.Context()
-// 	dbConn := database.DatabaseConnection()
-// 	repo := respository.New(dbConn)
-
-// 	decoder := json.NewDecoder(r.Body)
-
-// 	if err := decoder.Decode(&user); err != nil {
-// 		w.WriteHeader(401)
-// 		w.Write([]byte("incorrect username or password"))
-// 		return
-// 	}
-
-// 	u, err := repo.FindUserByUsername(ctx, user.Username)
-
-// 	if err != nil {
-// 		w.WriteHeader(401)
-// 		w.Write([]byte("incorrect username or password"))
-// 		return
-// 	}
-
-// 	if err = bcrypt.CompareHashAndPassword([]byte(u.HashPassword), []byte(user.HashPassword)); err != nil {
-// 		w.WriteHeader(400)
-// 		w.Write([]byte("incorrect username or password"))
-// 		return
-// 	}
-
-// 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-// 		"iss": strconv.Itoa(int(u.ID)),
-// 		"exp": time.Now().Add(time.Hour).Unix(),
-// 	})
-
-// 	token, err := claims.SignedString([]byte(secretKey))
-
-// 	if err != nil {
-// 		w.WriteHeader(500)
-// 		w.Write([]byte("could not login"))
-// 		return
-// 	}
-
-// 	cookie := http.Cookie{
-// 		Name:     "jwt",
-// 		Value:    token,
-// 		Expires:  time.Now().Add(time.Hour),
-// 		MaxAge:   3600,
-// 		HttpOnly: true,
-// 	}
-
-// 	http.SetCookie(w, &cookie)
-
-// 	w.WriteHeader(200)
-// 	w.Write([]byte(u.Username + " has been logged in"))
-// }
+	user.HashPassword = ""
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
+}
