@@ -32,16 +32,15 @@ func (h *JobHandler) errorResponse(w http.ResponseWriter, status int, message st
 	})
 }
 
-type CreateJobRequest struct {
+type JobRequest struct {
 	Position string `json:"position"`
 	Company  string `json:"company"`
-	UserID   int32  `json:"user_id"`
 }
 
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var reqBody CreateJobRequest
+	var reqBody JobRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -54,7 +53,9 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company, reqBody.UserID)
+	var userID int32 = 1
+
+	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company, userID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to create job")
@@ -69,7 +70,9 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	jobs, err := h.Repo.GetJobs(r.Context(), tempUserID)
+	var userID int32 = 1
+
+	jobs, err := h.Repo.GetJobs(r.Context(), userID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to fetch jobs")
@@ -89,7 +92,6 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	idStr := r.PathValue("id")
-
 	parsedID, err := strconv.ParseInt(idStr, 10, 32)
 
 	if err != nil {
@@ -98,23 +100,16 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := int32(parsedID)
-
-	var reqBody CreateJobRequest
-
+	var reqBody JobRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
 
 		return
 	}
 
-	if strings.TrimSpace(reqBody.Position) == "" || strings.TrimSpace(reqBody.Company) == "" {
-		h.errorResponse(w, http.StatusBadRequest, "Position and Company are required")
+	var userID int32 = 1
 
-		return
-	}
-
-	job, err := h.Repo.UpdateJob(r.Context(), id, tempUserID, reqBody.Position, reqBody.Company)
+	job, err := h.Repo.UpdateJob(r.Context(), int32(parsedID), userID, reqBody.Position, reqBody.Company)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to update job")
@@ -139,9 +134,9 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := int32(parsedID)
+	var userID int32 = 1
 
-	err = h.Repo.DeleteJob(r.Context(), id, tempUserID)
+	err = h.Repo.DeleteJob(r.Context(), int32(parsedID), userID)
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to delete job")
