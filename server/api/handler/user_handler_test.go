@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/JesstinSwadley/job-tracker/internal/auth"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
@@ -100,7 +101,9 @@ func TestRegisterUser(t *testing.T) {
 				},
 			}
 
-			h := NewUserHandler(mockRepo)
+			testTokenManager := auth.NewTokenManager("secret-key-for-testing")
+
+			h := NewUserHandler(mockRepo, testTokenManager)
 
 			req := httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -162,6 +165,12 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
+			name:           "Error: Empty Credentials",
+			body:           `{"username": "", "password": ""}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Username and Password are required",
+		},
+		{
 			name:           "Error: User Not Found",
 			body:           `{"username": "nonexistent", "password": "password123"}`,
 			mockErr:        errors.New("no rows in result set"),
@@ -178,6 +187,19 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 			expectedErrMsg: "Invalid username or password",
 		},
+		{
+			name:           "Error: Database failure",
+			body:           `{"username": "testuser", "password": "securepassword123"}`,
+			mockErr:        context.DeadlineExceeded,
+			expectedStatus: http.StatusInternalServerError,
+			expectedErrMsg: "Internal server error",
+		},
+		{
+			name:           "Error: Invalid JSON",
+			body:           `{invalid-json}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErrMsg: "Invalid request body",
+		},
 	}
 
 	for _, tt := range tests {
@@ -191,7 +213,9 @@ func TestLoginUser(t *testing.T) {
 				},
 			}
 
-			h := NewUserHandler(mockRepo)
+			testTokenManager := auth.NewTokenManager("secret-key-for-testing")
+
+			h := NewUserHandler(mockRepo, testTokenManager)
 
 			req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -204,13 +228,32 @@ func TestLoginUser(t *testing.T) {
 				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectedStatus, w.Code)
 			}
 
-			if tt.expectedErrMsg != "" {
+			if tt.expectedStatus == http.StatusOK {
+				var resp LoginResponse
+
+				if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+					t.Fatalf("failed to decode login response: %v", err)
+				}
+
+				if resp.Token == "" {
+					t.Error("expected token in resposne, got empty string")
+				}
+
+				if resp.User.Username != tt.mockUser.Username {
+					t.Errorf("expected username %s, got %s", tt.mockUser.Username, resp.User.Username)
+				}
+
+				if resp.User.HashPassword != "" {
+					t.Error("security violation: hash password leaked in login response")
+				}
+			} else if tt.expectedErrMsg != "" {
 				var errResp map[string]string
 				json.NewDecoder(w.Body).Decode(&errResp)
 
 				if errResp["error"] != tt.expectedErrMsg {
 					t.Errorf("%s: expected error %q, got %q", tt.name, tt.expectedErrMsg, errResp["error"])
 				}
+
 			}
 		})
 	}

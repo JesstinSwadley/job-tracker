@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/JesstinSwadley/job-tracker/internal/auth"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
@@ -17,11 +19,15 @@ type UserRepo interface {
 }
 
 type UserHandler struct {
-	Repo UserRepo
+	Repo         UserRepo
+	TokenManager *auth.TokenManager
 }
 
-func NewUserHandler(repo UserRepo) *UserHandler {
-	return &UserHandler{Repo: repo}
+func NewUserHandler(repo UserRepo, tokenManager *auth.TokenManager) *UserHandler {
+	return &UserHandler{
+		Repo:         repo,
+		TokenManager: tokenManager,
+	}
 }
 
 func (h *UserHandler) errorResponse(w http.ResponseWriter, status int, message string) {
@@ -39,6 +45,11 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Token string          `json:"token"`
+	User  repository.User `json:"user"`
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -116,10 +127,24 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.Repo.GetUserByUsername(r.Context(), reqBody.Username)
+	username := strings.TrimSpace(reqBody.Username)
+
+	if username == "" || reqBody.Password == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Username and Password are required")
+
+		return
+	}
+
+	user, err := h.Repo.GetUserByUsername(r.Context(), username)
 
 	if err != nil {
-		h.errorResponse(w, http.StatusUnauthorized, "Invalid username or password")
+		if strings.Contains(err.Error(), "no rows") {
+			h.errorResponse(w, http.StatusUnauthorized, "Invalid username or password")
+
+			return
+		}
+
+		h.errorResponse(w, http.StatusInternalServerError, "Internal server error")
 
 		return
 	}
@@ -132,7 +157,18 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := h.TokenManager.CreateToken(user.ID, 24*time.Hour)
+
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Failed to generate token")
+
+		return
+	}
+
 	user.HashPassword = ""
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(LoginResponse{
+		Token: token,
+		User:  user,
+	})
 }
