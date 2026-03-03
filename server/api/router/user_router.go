@@ -1,16 +1,12 @@
 package router
 
-// import (
-// 	"net/http"
+import (
+	"net/http"
 
-// 	"github.com/JesstinSwadley/job-tracker/api/handler"
-// )
+	"github.com/JesstinSwadley/job-tracker/api/handler"
+)
 
-// func UserRouter() *http.ServeMux {
-// 	router := http.NewServeMux()
-
-// 	router.HandleFunc("POST /register", handler.RegisterUser)
-// 	router.HandleFunc("POST /login", handler.LoginUser)
-
-// 	return router
-// }
+func UserRouter(mux *http.ServeMux, h *handler.UserHandler) {
+	mux.HandleFunc("POST /register", h.Register)
+	mux.HandleFunc("POST /login", h.Login)
+}

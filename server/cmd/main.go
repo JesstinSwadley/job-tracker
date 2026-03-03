@@ -12,6 +12,7 @@ import (
 
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/api/handler"
+	"github.com/JesstinSwadley/job-tracker/internal/auth"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 	"github.com/rs/cors"
@@ -37,10 +38,21 @@ func main() {
 		}
 	}
 
-	sqlcRepo := repository.New(dbPool)
-	jobRepo := &handler.SQLCJobRepo{Queries: sqlcRepo}
+	sqlcQueries := repository.New(dbPool)
 
-	apiHandler := api.ApiRouter(jobRepo)
+	jobRepo := &handler.SQLCJobRepo{Queries: sqlcQueries}
+	userRepo := &handler.SQLCUserRepo{Queries: sqlcQueries}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if jwtSecret == "" {
+		jwtSecret = "very-secret-key-change-me"
+		log.Println("JWT_SECRET not set. Using insecure default.")
+	}
+
+	tokenManager := auth.NewTokenManager(jwtSecret)
+
+	apiHandler := api.ApiRouter(jobRepo, userRepo, tokenManager)
 	corsHandler := cors.AllowAll().Handler(apiHandler)
 
 	srv := &http.Server{
