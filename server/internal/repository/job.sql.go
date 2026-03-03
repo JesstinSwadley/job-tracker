@@ -11,7 +11,7 @@ import (
 
 const deleteJob = `-- name: DeleteJob :exec
 DELETE FROM jobs
-WHERE id = $1 AND user_id= $2
+WHERE id = $1 AND user_id = $2
 `
 
 type DeleteJobParams struct {
