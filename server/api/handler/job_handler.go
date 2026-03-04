@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/JesstinSwadley/job-tracker/internal/middleware"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
 
@@ -42,6 +43,14 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	var reqBody JobRequest
 
+	userID, err := middleware.GetUserID(r.Context())
+
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Unauthorized")
+
+		return
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
 
@@ -52,8 +61,6 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, http.StatusBadRequest, "Position and Company are required")
 		return
 	}
-
-	var userID int32 = 1
 
 	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company, userID)
 
@@ -70,7 +77,13 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var userID int32 = 1
+	userID, err := middleware.GetUserID(r.Context())
+
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Unauthorized")
+
+		return
+	}
 
 	jobs, err := h.Repo.GetJobs(r.Context(), userID)
 
@@ -91,6 +104,14 @@ func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	userID, err := middleware.GetUserID(r.Context())
+
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Unauthorized")
+
+		return
+	}
+
 	idStr := r.PathValue("id")
 	parsedID, err := strconv.ParseInt(idStr, 10, 32)
 
@@ -107,7 +128,11 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int32 = 1
+	if strings.TrimSpace(reqBody.Position) == "" || strings.TrimSpace(reqBody.Company) == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Position and Company are required")
+
+		return
+	}
 
 	job, err := h.Repo.UpdateJob(r.Context(), int32(parsedID), userID, reqBody.Position, reqBody.Company)
 
@@ -124,6 +149,14 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	userID, err := middleware.GetUserID(r.Context())
+
+	if err != nil {
+		h.errorResponse(w, http.StatusUnauthorized, "Unauthorized")
+
+		return
+	}
+
 	idStr := r.PathValue("id")
 
 	parsedID, err := strconv.ParseInt(idStr, 10, 32)
@@ -133,8 +166,6 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	var userID int32 = 1
 
 	err = h.Repo.DeleteJob(r.Context(), int32(parsedID), userID)
 

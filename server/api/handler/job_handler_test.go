@@ -9,8 +9,14 @@ import (
 	"testing"
 
 	"github.com/JesstinSwadley/job-tracker/api/handler"
+	"github.com/JesstinSwadley/job-tracker/internal/middleware"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
 )
+
+func withContext(r *http.Request, userID int32) *http.Request {
+	ctx := middleware.SetUserID(r.Context(), userID)
+	return r.WithContext(ctx)
+}
 
 type mockJobRepo struct {
 	jobs []repository.Job
@@ -26,6 +32,7 @@ func (m *mockJobRepo) InsertJob(_ context.Context, position, company string, use
 		ID:       1,
 		Position: position,
 		Company:  company,
+		UserID:   userID,
 	}, nil
 }
 
@@ -46,6 +53,7 @@ func (m *mockJobRepo) UpdateJob(_ context.Context, id, userID int32, position, c
 		ID:       id,
 		Position: position,
 		Company:  company,
+		UserID:   userID,
 	}, nil
 }
 
@@ -59,6 +67,7 @@ func TestCreateJob(t *testing.T) {
 		method         string
 		body           string
 		mockErr        error
+		noUserInCtx    bool
 		expectedStatus int
 		expectedID     int32
 		expectedErrMsg string
@@ -69,6 +78,14 @@ func TestCreateJob(t *testing.T) {
 			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
 			expectedStatus: http.StatusCreated,
 			expectedID:     1,
+		},
+		{
+			name:           "Error: Unauthorized (Missing Context)",
+			method:         http.MethodPost,
+			body:           `{"position": "Dev", "company": "Co"}`,
+			noUserInCtx:    true,
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Unauthorized",
 		},
 		{
 			name:           "Error: Empty position",
@@ -108,6 +125,11 @@ func TestCreateJob(t *testing.T) {
 
 			req := httptest.NewRequest(tt.method, "/jobs", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
+
+			if !tt.noUserInCtx {
+				req = withContext(req, 1)
+			}
+
 			w := httptest.NewRecorder()
 
 			h.CreateJob(w, req)
@@ -141,6 +163,7 @@ func TestGetJobs(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
+		noUserInCtx    bool
 		mockJobs       []repository.Job
 		mockErr        error
 		expectedStatus int
@@ -179,6 +202,12 @@ func TestGetJobs(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 			expectedErrMsg: "Failed to fetch jobs",
 		},
+		{
+			name:           "Error: Unauthorized",
+			noUserInCtx:    true,
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Unauthorized",
+		},
 	}
 
 	for _, tt := range tests {
@@ -191,6 +220,11 @@ func TestGetJobs(t *testing.T) {
 			h := handler.NewJobHandler(mockRepo)
 
 			req := httptest.NewRequest(tt.method, "/jobs", nil)
+
+			if !tt.noUserInCtx {
+				req = withContext(req, 1)
+			}
+
 			w := httptest.NewRecorder()
 
 			h.GetJobs(w, req)
@@ -232,6 +266,7 @@ func TestGetJobs(t *testing.T) {
 func TestUpdateJob(t *testing.T) {
 	tests := []struct {
 		name           string
+		noUserInCtx    bool
 		jobID          string
 		body           string
 		expectedStatus int
@@ -273,6 +308,14 @@ func TestUpdateJob(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedErrMsg: "Invalid request body",
 		},
+		{
+			name:           "Error: Unauthorized",
+			jobID:          "1",
+			body:           `{"position": "Dev", "company": "Co"}`,
+			noUserInCtx:    true,
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Unauthorized",
+		},
 	}
 
 	for _, tt := range tests {
@@ -282,9 +325,13 @@ func TestUpdateJob(t *testing.T) {
 			h := handler.NewJobHandler(mockRepo)
 
 			req := httptest.NewRequest(http.MethodPut, "/jobs/"+tt.jobID, strings.NewReader(tt.body))
-			w := httptest.NewRecorder()
-
 			req.SetPathValue("id", tt.jobID)
+
+			if !tt.noUserInCtx {
+				req = withContext(req, 1)
+			}
+
+			w := httptest.NewRecorder()
 
 			h.UpdateJob(w, req)
 
@@ -317,6 +364,7 @@ func TestDeleteJob(t *testing.T) {
 	tests := []struct {
 		name           string
 		jobID          string
+		noUserInCtx    bool
 		mockErr        error
 		expectedStatus int
 		expectedErrMsg string
@@ -339,6 +387,13 @@ func TestDeleteJob(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 			expectedErrMsg: "Failed to delete job",
 		},
+		{
+			name:           "Error: Unauthorized",
+			jobID:          "1",
+			noUserInCtx:    true,
+			expectedStatus: http.StatusUnauthorized,
+			expectedErrMsg: "Unauthorized",
+		},
 	}
 
 	for _, tt := range tests {
@@ -350,6 +405,10 @@ func TestDeleteJob(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			req.SetPathValue("id", tt.jobID)
+
+			if !tt.noUserInCtx {
+				req = withContext(req, 1)
+			}
 
 			h.DeleteJob(w, req)
 

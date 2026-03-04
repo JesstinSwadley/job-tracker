@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/internal/auth"
@@ -66,6 +67,9 @@ func TestApiRouting(t *testing.T) {
 	mockUser := &mockUserRepo{}
 	testTM := auth.NewTokenManager("test-secret")
 
+	validToken, _ := testTM.CreateToken(1, time.Minute)
+	authHeader := "Bearer " + validToken
+
 	app := api.ApiRouter(mockJob, mockUser, testTM)
 
 	tests := []struct {
@@ -73,62 +77,81 @@ func TestApiRouting(t *testing.T) {
 		method         string
 		url            string
 		body           string
+		setupHeader    func(r *http.Request)
 		expectedStatus int
 	}{
 		{
-			name:           "POST register works through v1 prefix",
+			name:           "POST register works",
 			method:         http.MethodPost,
 			url:            "/api/v1/register",
 			body:           `{"username": "newuser", "password": "password123"}`,
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name:           "POST login works through v1 prefix",
+			name:           "POST login works",
 			method:         http.MethodPost,
 			url:            "/api/v1/login",
 			body:           `{"username": "testuser", "password": "password123"}`,
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
-			name:           "POST job works through v1 prefix",
-			method:         http.MethodPost,
-			url:            "/api/v1/jobs",
-			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			name:   "POST job works with valid token",
+			method: http.MethodPost,
+			url:    "/api/v1/jobs",
+			body:   `{"position": "Backend Dev", "company": "Test Company"}`,
+			setupHeader: func(r *http.Request) {
+				r.Header.Set("Authorization", authHeader)
+			},
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name:           "GET jobs works through v1 prefix",
-			method:         http.MethodGet,
-			url:            "/api/v1/jobs",
-			body:           "",
+			name:   "GET jobs works with valid token",
+			method: http.MethodGet,
+			url:    "/api/v1/jobs",
+			setupHeader: func(r *http.Request) {
+				r.Header.Set("Authorization", authHeader)
+			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "PUT jobs works through v1 prefix",
-			method:         http.MethodPut,
-			url:            "/api/v1/jobs/1",
-			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			name:   "PUT jobs works with valid token",
+			method: http.MethodPut,
+			url:    "/api/v1/jobs/1",
+			body:   `{"position": "Backend Dev", "company": "Test Company"}`,
+			setupHeader: func(r *http.Request) {
+				r.Header.Set("Authorization", authHeader)
+			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "Delete jobs works through v1 prefix",
-			method:         http.MethodDelete,
-			url:            "/api/v1/jobs/1",
+			name:   "Delete jobs works with valid token",
+			method: http.MethodDelete,
+			url:    "/api/v1/jobs/1",
+			setupHeader: func(r *http.Request) {
+				r.Header.Set("Authorization", authHeader)
+			},
 			expectedStatus: http.StatusNoContent,
 		},
 		{
-			name:           "Route not found returns 404",
+			name:           "GET jobs fails without token",
 			method:         http.MethodGet,
-			url:            "/api/v1/wrong-route",
-			body:           "",
-			expectedStatus: http.StatusNotFound,
+			url:            "/api/v1/jobs",
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
-			name:           "Incorrect method returns 405 via Handler Guard",
-			method:         http.MethodPatch,
-			url:            "/api/v1/jobs",
-			body:           `{}`,
-			expectedStatus: http.StatusMethodNotAllowed,
+			name:   "GET jobs fails with malformed token",
+			method: http.MethodGet,
+			url:    "/api/v1/jobs",
+			setupHeader: func(r *http.Request) {
+				r.Header.Set("Authorization", "NotBearer token123")
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Route not found returns 401 when unauthenticated",
+			method:         http.MethodGet,
+			url:            "/api/v1/wrong-route",
+			expectedStatus: http.StatusUnauthorized,
 		},
 	}
 
@@ -136,6 +159,11 @@ func TestApiRouting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.url, strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
+
+			if tt.setupHeader != nil {
+				tt.setupHeader(req)
+			}
+
 			w := httptest.NewRecorder()
 
 			app.ServeHTTP(w, req)
