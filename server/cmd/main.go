@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,11 +19,15 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	port := os.Getenv("PORT")
 
 	if port == "" {
 		port = "8080"
-		log.Println("PORT not set. Defaulting to 8080")
+
+		slog.Warn("PORT not set. Defaulting to 8080")
 	}
 
 	dbPool := database.DatabasePool()
@@ -34,12 +38,13 @@ func main() {
 		defer cancel()
 
 		if err := dbPool.Ping(ctx); err != nil {
-			log.Fatalf("failed to ping database: %v", err)
+			slog.Error("failed to ping database", "error", err)
+
+			os.Exit(1)
 		}
 	}
 
 	sqlcQueries := repository.New(dbPool)
-
 	jobRepo := &handler.SQLCJobRepo{Queries: sqlcQueries}
 	userRepo := &handler.SQLCUserRepo{Queries: sqlcQueries}
 
@@ -47,7 +52,8 @@ func main() {
 
 	if jwtSecret == "" {
 		jwtSecret = "very-secret-key-change-me"
-		log.Println("JWT_SECRET not set. Using insecure default.")
+
+		slog.Warn("JWT_SECRET not set. Using insecure default.")
 	}
 
 	tokenManager := auth.NewTokenManager(jwtSecret)
@@ -61,10 +67,12 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("Server listening on PORT: %s", port)
+		slog.Info("Server listening", "port", port)
 
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Server failed: %v", err)
+			slog.Error("Server failed", "error", err)
+
+			os.Exit(1)
 		}
 	}()
 
@@ -72,14 +80,14 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	<-stop
-	log.Println("Shutting down server...")
+	slog.Info("Shutting down server...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("Server forced to shutdown: %v", err)
+		slog.Error("Server forced to shutdown", "error", err)
 	}
 
-	log.Println("Server exited gracefully")
+	slog.Info("Server exited gracefully")
 }

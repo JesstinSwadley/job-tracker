@@ -9,7 +9,7 @@ import (
 	"github.com/JesstinSwadley/job-tracker/internal/middleware"
 )
 
-func ApiRouter(jobRepo handler.JobRepo, userRepo handler.UserRepo, tm *auth.TokenManager) *http.ServeMux {
+func ApiRouter(jobRepo handler.JobRepo, userRepo handler.UserRepo, tm *auth.TokenManager) http.Handler {
 	jobHandler := handler.NewJobHandler(jobRepo)
 	userHandler := handler.NewUserHandler(userRepo, tm)
 
@@ -27,5 +27,5 @@ func ApiRouter(jobRepo handler.JobRepo, userRepo handler.UserRepo, tm *auth.Toke
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/api/v1/", http.StripPrefix("/api/v1", v1))
 
-	return apiMux
+	return middleware.Logger(apiMux)
 }
