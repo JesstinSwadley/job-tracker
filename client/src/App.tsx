@@ -1,9 +1,8 @@
-
 import Nav from "./components/Nav";
 import { BrowserRouter, Routes } from "react-router";
 import { Route } from "react-router";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
+import Login from "./pages/auth/Login";
 import Register from "./pages/Register";
 
 function App() {

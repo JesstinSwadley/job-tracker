@@ -1,30 +1,30 @@
-import React from 'react'
-import { Link } from 'react-router'
-
-// Assign Backend API URL to variable
-const API_URL = import.meta.env.VITE_API_URL
+import React, { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router'
+import { loginRequest } from '../../services/auth';
 
 const LoginForm = () => {
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const navigate = useNavigate();
+
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+		setIsLoading(true);
 
-		const form: HTMLFormElement = e.target as HTMLFormElement;
-		const formData: FormData = new FormData(form);
+		const formData: FormData = new FormData(e.currentTarget);
+		const username = formData.get("username") as string;
+		const password = formData.get("password") as string;
 
-		const username = formData.get("username");
-		const password = formData.get("password");
+		try {
+			const data = await loginRequest(username, password);
 
-		await fetch(`${API_URL}/user/login`, {
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			method: 'POST',
-			credentials: 'include',
-			body: JSON.stringify({
-				username,
-				password
-			})
-		});
+			localStorage.setItem('token', data.token);
+			navigate('/dashboard');
+		} catch (err: any) {
+			setError(err.message);
+		} finally {
+			setIsLoading(false);
+		}
 	}
 
 	return (
@@ -35,6 +35,9 @@ const LoginForm = () => {
 					<div
 						className="space-y-1">
 							<h2 className="text-xl font-bold text-black">Login</h2>
+
+							{error && <p className="text-red-500 text-sm font-bold">{error}</p>}
+
 							<Link
 								className="text-sm font-bold text-gray-300"
 								to="#">
@@ -46,13 +49,14 @@ const LoginForm = () => {
 					className="space-y-1">
 					<label 
 						className="text-sm font-bold text-black"
-						htmlFor="emailusername">
-							Email or Username
+						htmlFor="username">
+							Username
 					</label>
 					<input 
 						type="text" 
-						name="emailusername" 
-						id="emailusername" 
+						name="username" 
+						id="username"
+						placeholder='Username'
 						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 				</div>
 
@@ -67,6 +71,7 @@ const LoginForm = () => {
 						type="password" 
 						name="password" 
 						id="password"
+						placeholder='Password'
 						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 				</div>
 
@@ -86,8 +91,12 @@ const LoginForm = () => {
 
 				<button
 					type="submit"
-					className="w-40 rounded-lg bg-blue-600 py-3 text-lg font-bold text-white hover:bg-blue-700 transition">
-						Login
+					disabled={isLoading}
+					className={`w-40 rounded-lg py-3 text-lg font-bold text-white transition cursor-pointer ${
+						isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700"
+					}`}
+				>
+					{isLoading ? "Signing in..." : "Login"}
 				</button>
 
 
