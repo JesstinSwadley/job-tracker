@@ -1,4 +1,4 @@
-import React, { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { loginRequest } from '../../services/auth';
 
@@ -40,7 +40,7 @@ const LoginForm = () => {
 
 							<Link
 								className="text-sm font-bold text-gray-300"
-								to="#">
+								to="/register">
 									Need to register an account? Create an account
 							</Link>
 					</div>

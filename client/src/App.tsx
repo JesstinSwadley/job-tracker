@@ -3,11 +3,9 @@ import { BrowserRouter, Routes } from "react-router";
 import { Route } from "react-router";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
-import Register from "./pages/Register";
+import Register from "./pages/auth/Register";
 
-function App() {
-
-	
+function App() {	
 	return (
 		<>
 			<BrowserRouter>

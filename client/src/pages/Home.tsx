@@ -2,7 +2,7 @@ import { useState } from "react"
 import JobTable from "../components/JobTable"
 import NewJobForm from "../components/NewJobForm"
 import PopUp from "../components/PopUp";
-import RegisterForm from "../components/RegisterForm";
+import RegisterForm from "../components/auth/RegisterForm";
 
 const Home = () => {
 	const [showNewPopup, setShowNewPopup] = useState<boolean>(false);
