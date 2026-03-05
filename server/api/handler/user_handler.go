@@ -111,9 +111,19 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := h.TokenManager.CreateToken(user.ID, 24*time.Hour)
+
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "User created but token generation failed")
+		return
+	}
+
 	user.HashPassword = ""
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(LoginResponse{
+		Token: token,
+		User:  user,
+	})
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {

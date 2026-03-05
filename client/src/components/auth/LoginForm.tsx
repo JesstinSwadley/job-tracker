@@ -19,6 +19,7 @@ const LoginForm = () => {
 			const data = await loginRequest(username, password);
 
 			localStorage.setItem('token', data.token);
+			
 			navigate('/dashboard');
 		} catch (err: any) {
 			setError(err.message);

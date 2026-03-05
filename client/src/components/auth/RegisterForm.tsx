@@ -9,14 +9,24 @@ const RegisterForm = () => {
 
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setIsLoading(true);
+		setError(null);
 
 		const formData: FormData = new FormData(e.currentTarget);
 		const username = formData.get("username") as string;
 		const password = formData.get("password") as string;
+		const confirmPassword = formData.get("confirmPassword") as string;
+
+		if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
+		setIsLoading(true);
 
 		try {
-			await registerRequest(username, password);
+			const data = await registerRequest(username, password);
+
+			localStorage.setItem('token', data.token);
 
 			navigate('/dashboard');
 		} catch (err: any) {
@@ -54,7 +64,9 @@ const RegisterForm = () => {
 							htmlFor="username">
 								Username
 						</label>
-						<input 
+						<input
+							required
+							minLength={3}
 							type="text" 
 							name="username" 
 							id="username"
@@ -70,6 +82,8 @@ const RegisterForm = () => {
 								Password
 						</label>
 						<input 
+							required
+							minLength={8}
 							type="password" 
 							name="password" 
 							id="password"
@@ -85,6 +99,8 @@ const RegisterForm = () => {
 								Confrim Password
 						</label>
 						<input 
+							required
+							minLength={8}
 							type="password" 
 							name="confirmPassword" 
 							id="confirmPassword"
@@ -99,7 +115,7 @@ const RegisterForm = () => {
 							isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700"
 						}`}
 					>
-						{isLoading ? "Signing in..." : "Register"}
+						{isLoading ? "Creating Account..." : "Register"}
 					</button>
 			</form>
 		</>
