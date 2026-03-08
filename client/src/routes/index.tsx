@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import Dashboard from "../pages/dashboard/Dashboard";
 
 const AppRoutes = () => {
 	return (
@@ -17,7 +18,7 @@ const AppRoutes = () => {
 				element={<ProtectedRoute />}>
 					<Route 
 						path="/dashboard" 
-						element={<div className="p-10 text-2xl font-bold text-center">Your Job Tracker Dashboard</div>} />
+						Component={Dashboard} />
 					
 					<Route 
 						path="/jobs" 
