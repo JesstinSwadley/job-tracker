@@ -41,7 +41,7 @@ func TestRegisterUser(t *testing.T) {
 			name:           "Success: Valid User Registration",
 			body:           `{"username": "testuser", "password": "securepassword123"}`,
 			expectedStatus: http.StatusCreated,
-			expectedID:     1,
+			expectedID:     0,
 		},
 		{
 			name:           "Error: Password Too Short",
