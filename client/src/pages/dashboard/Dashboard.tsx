@@ -59,7 +59,10 @@ const Dashboard = () => {
 						className="grid gap-4">
 							{jobs.length > 0 ? (
 								jobs.map(job => (
-									<JobCard key={job.id} job={job} />
+									<JobCard 
+										key={job.id} 
+										job={job} 
+										onDeleteSuccess={loadJobs}/>
 								))
 							) : (
 								<div 

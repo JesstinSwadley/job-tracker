@@ -16,6 +16,10 @@ export interface CreateJobRequest {
 const getAuthHeaders = () => {
 	const token = localStorage.getItem('token');
 
+	if (!token) {
+		console.warn("No token found in localStorage");
+	}
+
 	return {
 		'Content-Type': 'application/json',
 		'Authorization': `Bearer ${token}`
@@ -49,4 +53,16 @@ export const createJob = async (position: string, company: string): Promise<Job>
 	}
 
 	return response.json();
-};
+}
+
+export const deleteJob = async (jobId: number): Promise<void> => {
+	const response = await fetch(`${API_URL}/api/v1/jobs/${jobId}`, {
+		method: 'DELETE',
+		headers: getAuthHeaders(),
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.error || 'Failed to delete job');
+	}
+}
