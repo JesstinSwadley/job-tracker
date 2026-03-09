@@ -1,7 +1,5 @@
 import { useState } from "react"
 import JobTable from "../components/JobTable"
-import NewJobForm from "../components/NewJobForm"
-import PopUp from "../components/PopUp";
 import RegisterForm from "../components/auth/RegisterForm";
 
 const Home = () => {
@@ -31,12 +29,6 @@ const Home = () => {
 				className="flex justify-center m-5">
 				<JobTable />
 			</section>
-
-			<PopUp
-				showPopup={showNewPopup}
-				onClose={closeNewPopUp}>
-					<NewJobForm />
-			</PopUp>
 		</>
 	)
 }

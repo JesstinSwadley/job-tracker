@@ -1,29 +1,30 @@
 import { useEffect, useState } from "react"
 import { fetchJobs, type Job } from "../../services/jobs"
 import JobCard from "../../components/dashboard/JobCard";
+import Modal from "../../components/ui/Modal";
+import NewJobForm from "../../components/dashboard/NewJobForm";
 
 
 const Dashboard = () => {
 	const [jobs, setJobs] = useState<Job[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+
+	const loadJobs = async () => {
+		try {
+			const data = await fetchJobs();
+
+			setJobs(data);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	useEffect(() => {
-		const loadJobs = async () => {
-			try {
-				const data = await fetchJobs();
-
-				setJobs(data);
-			} catch (err) {
-				console.error(err);
-			} finally {
-				setLoading(false);
-			}
-		};
-
 		loadJobs();
 	}, []);
-
-	if (loading) return <div>Loading your careers...</div>
 
 	return (
 		<div className="mx-auto max-w-4xl p-8">
@@ -40,18 +41,52 @@ const Dashboard = () => {
 						</p>
 					</div>
 					<button 
+						onClick={() => setIsModalOpen(true)}
 						className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition">
-						+ Add New Job
+							+ Add New Job
 					</button>
 			</header>
 
-			<div className="grid gap-4">
-				{jobs.map((job) => (
-					<JobCard key={job.id} job={job} />
-				))}
-			</div>
-		</div>
-	)
-}
+			{
+				isLoading ? (
+					<div 
+						className="flex justify-center py-20">
+						<div 
+							className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+					</div>
+				) : (
+					<div 
+						className="grid gap-4">
+							{jobs.length > 0 ? (
+								jobs.map(job => (
+									<JobCard key={job.id} job={job} />
+								))
+							) : (
+								<div 
+									className="rounded-3xl border-2 border-dashed border-gray-100 py-20 text-center">
+										<p 
+											className="text-lg font-bold text-gray-300">
+											Your tracker is empty. Time to apply!
+										</p>
+								</div>
+							)}
+					</div>
+				)
+			}
 
-export default Dashboard
+			<Modal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				title="Track New Application">
+					<NewJobForm
+						onSuccess={() => {
+							loadJobs();
+							setIsModalOpen(false);
+						}}
+					/>
+			</Modal>
+		</div>
+	);
+};
+
+export default Dashboard;

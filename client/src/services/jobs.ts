@@ -8,6 +8,11 @@ export interface Job {
 	user_id: number;
 }
 
+export interface CreateJobRequest {
+	position: string;
+	company: string;
+}
+
 const getAuthHeaders = () => {
 	const token = localStorage.getItem('token');
 
@@ -38,7 +43,9 @@ export const createJob = async (position: string, company: string): Promise<Job>
 	});
 
 	if (!response.ok) {
-		throw new Error('Failed to create job');
+		const errorData = await response.json();
+
+		throw new Error(errorData.error || 'Failed to create job');
 	}
 
 	return response.json();
