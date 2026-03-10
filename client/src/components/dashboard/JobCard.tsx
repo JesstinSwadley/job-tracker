@@ -3,9 +3,10 @@ import { deleteJob, type Job } from "../../services/jobs";
 interface JobCardProps {
 	job: Job;
 	onDeleteSuccess: () => void;
+	onEditClick: () => void;
 }
 
-const JobCard = ({ job, onDeleteSuccess }: JobCardProps) => {
+const JobCard = ({ job, onDeleteSuccess, onEditClick }: JobCardProps) => {
 	const getStatusStyles = (status: string = "Applied") => {
 		const styles: Record<string, string> = {
 			"Applied": "bg-blue-100 text-blue-700 border-blue-200",
@@ -40,14 +41,16 @@ const JobCard = ({ job, onDeleteSuccess }: JobCardProps) => {
 								{job.company.charAt(0).toUpperCase()}
 						</div>
 
-					<div>
-						<h3 className="text-lg font-bold text-gray-900 leading-tight">
-							{job.position}
-						</h3>
-						<p className="text-sm font-medium text-gray-500">
-							{job.company}
-						</p>
-					</div>
+						<div>
+							<h3 
+								className="text-lg font-bold text-gray-900 leading-tight">
+									{job.position}
+							</h3>
+							<p 
+								className="text-sm font-medium text-gray-500">
+									{job.company}
+							</p>
+						</div>
 				</div>
 
 				<div 
@@ -58,10 +61,13 @@ const JobCard = ({ job, onDeleteSuccess }: JobCardProps) => {
 						</span>
 
 
-					<button className="text-gray-300 hover:text-blue-600 transition">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-5 w-5">
-							<path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-						</svg>
+					<button 
+						onClick={onEditClick}
+						title="Edit Application"
+						className="text-gray-300 hover:text-blue-600 transition p-1">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-5 w-5">
+								<path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+							</svg>
 					</button>
 
 					<button
@@ -74,7 +80,7 @@ const JobCard = ({ job, onDeleteSuccess }: JobCardProps) => {
 					</button>
 				</div>
 		</div>
-	)
-}
+	);
+};
 
-export default JobCard
+export default JobCard;

@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { createJob } from "../../services/jobs";
+import { createJob, updateJob, type Job } from "../../services/jobs";
 
 interface NewJobFormProps {
 	onSuccess: () => void;
+	jobToEdit?: Job | null;
 }
 
-const NewJobForm = ({ onSuccess }: NewJobFormProps) => {
+const NewJobForm = ({ onSuccess, jobToEdit }: NewJobFormProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	const isEditMode = !!jobToEdit;
+	const buttonText = isLoading ? "Saving..." : (isEditMode ? "Update Job" : "Add Job");
 
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -25,11 +29,15 @@ const NewJobForm = ({ onSuccess }: NewJobFormProps) => {
 		}
 
 		try {
-			await createJob(position, company);
+			if (isEditMode && jobToEdit) {
+				await updateJob(jobToEdit.id, position, company);
+			} else {
+				await createJob(position, company);
+			}
 
 			onSuccess();
 		} catch (err: any) {
-			setError(err.message);
+			setError(err.message || "Something went wrong. Please try again.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -59,6 +67,7 @@ const NewJobForm = ({ onSuccess }: NewJobFormProps) => {
 							required
 							id="positionInput"
 							name="position"
+							defaultValue={jobToEdit?.position || ""}
 							placeholder="Web Developer"
 							type="text" 
 							className="w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -75,6 +84,7 @@ const NewJobForm = ({ onSuccess }: NewJobFormProps) => {
 							required
 							id="companyInput"
 							name="company"
+							defaultValue={jobToEdit?.company || ""}
 							placeholder="Business LLC"
 							type="text" 
 							className="w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -86,7 +96,7 @@ const NewJobForm = ({ onSuccess }: NewJobFormProps) => {
 					className={`w-full rounded-lg py-3 font-bold text-white transition ${
 						isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700"
 				}`}>
-					{isLoading ? "Saving..." : "Add Job"}
+					{buttonText}
 				</button>
 		</form>
 	);

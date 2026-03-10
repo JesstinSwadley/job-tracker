@@ -66,3 +66,18 @@ export const deleteJob = async (jobId: number): Promise<void> => {
 		throw new Error(errorData.error || 'Failed to delete job');
 	}
 }
+
+export const updateJob = async (id: number, position: string, company: string): Promise<Job> => {
+	const response = await fetch(`${API_URL}/api/v1/jobs/${id}`, {
+		method: 'PUT',
+		headers: getAuthHeaders(),
+		body: JSON.stringify({ position, company }),
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json().catch(() => ({}));
+		throw new Error(errorData.error || 'Failed to update job');
+	}
+
+	return response.json();
+};

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react"
 import { fetchJobs, type Job } from "../../services/jobs"
 import JobCard from "../../components/dashboard/JobCard";
 import Modal from "../../components/ui/Modal";
-import NewJobForm from "../../components/dashboard/NewJobForm";
+import JobForm from "../../components/dashboard/JobForm";
 
 
 const Dashboard = () => {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
 	const loadJobs = async () => {
 		try {
@@ -21,6 +22,16 @@ const Dashboard = () => {
 			setIsLoading(false);
 		}
 	};
+
+	const handleEdit = (job: Job) => {
+		setSelectedJob(job);
+		setIsModalOpen(true);
+	}
+
+	const handleAddNew = () => {
+		setSelectedJob(null);
+		setIsModalOpen(true);
+	}
 
 	useEffect(() => {
 		loadJobs();
@@ -41,7 +52,7 @@ const Dashboard = () => {
 						</p>
 					</div>
 					<button 
-						onClick={() => setIsModalOpen(true)}
+						onClick={handleAddNew}
 						className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition">
 							+ Add New Job
 					</button>
@@ -62,7 +73,8 @@ const Dashboard = () => {
 									<JobCard 
 										key={job.id} 
 										job={job} 
-										onDeleteSuccess={loadJobs}/>
+										onDeleteSuccess={loadJobs}
+										onEditClick={() => handleEdit(job)}/>
 								))
 							) : (
 								<div 
@@ -81,7 +93,8 @@ const Dashboard = () => {
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
 				title="Track New Application">
-					<NewJobForm
+					<JobForm
+						jobToEdit={selectedJob}
 						onSuccess={() => {
 							loadJobs();
 							setIsModalOpen(false);
