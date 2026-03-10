@@ -9,10 +9,20 @@ import (
 )
 
 type Job struct {
-	ID       int32  `json:"id"`
-	Position string `json:"position"`
-	Company  string `json:"company"`
-	UserID   int32  `json:"user_id"`
+	ID            int32              `json:"id"`
+	Position      string             `json:"position"`
+	Company       string             `json:"company"`
+	UserID        int32              `json:"user_id"`
+	Status        string             `json:"status"`
+	Salary        *string            `json:"salary"`
+	JobUrl        *string            `json:"job_url"`
+	Notes         *string            `json:"notes"`
+	Source        *string            `json:"source"`
+	LocationType  *string            `json:"location_type"`
+	AppliedAt     pgtype.Timestamptz `json:"applied_at"`
+	InterviewedAt pgtype.Timestamptz `json:"interviewed_at"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {

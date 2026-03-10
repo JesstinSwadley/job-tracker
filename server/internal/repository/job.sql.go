@@ -7,6 +7,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deleteJob = `-- name: DeleteJob :exec
@@ -25,8 +27,9 @@ func (q *Queries) DeleteJob(ctx context.Context, arg DeleteJobParams) error {
 }
 
 const getJobs = `-- name: GetJobs :many
-SELECT id, position, company, user_id FROM jobs
+SELECT id, position, company, user_id, status, salary, job_url, notes, source, location_type, applied_at, interviewed_at, created_at, updated_at FROM jobs
 WHERE user_id = $1
+ORDER BY created_at DESC
 `
 
 func (q *Queries) GetJobs(ctx context.Context, userID int32) ([]Job, error) {
@@ -43,6 +46,16 @@ func (q *Queries) GetJobs(ctx context.Context, userID int32) ([]Job, error) {
 			&i.Position,
 			&i.Company,
 			&i.UserID,
+			&i.Status,
+			&i.Salary,
+			&i.JobUrl,
+			&i.Notes,
+			&i.Source,
+			&i.LocationType,
+			&i.AppliedAt,
+			&i.InterviewedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -55,41 +68,102 @@ func (q *Queries) GetJobs(ctx context.Context, userID int32) ([]Job, error) {
 }
 
 const insertJob = `-- name: InsertJob :one
-INSERT INTO jobs (position, company, user_id)
-VALUES ($1, $2, $3)
-RETURNING id, position, company, user_id
+INSERT INTO jobs (
+	position, 
+	company, 
+	user_id,
+	status,
+	salary,
+	job_url,
+	notes,
+	source,
+	location_type,
+	applied_at,
+	interviewed_at
+) VALUES (
+	$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+)
+RETURNING id, position, company, user_id, status, salary, job_url, notes, source, location_type, applied_at, interviewed_at, created_at, updated_at
 `
 
 type InsertJobParams struct {
-	Position string `json:"position"`
-	Company  string `json:"company"`
-	UserID   int32  `json:"user_id"`
+	Position      string             `json:"position"`
+	Company       string             `json:"company"`
+	UserID        int32              `json:"user_id"`
+	Status        string             `json:"status"`
+	Salary        *string            `json:"salary"`
+	JobUrl        *string            `json:"job_url"`
+	Notes         *string            `json:"notes"`
+	Source        *string            `json:"source"`
+	LocationType  *string            `json:"location_type"`
+	AppliedAt     pgtype.Timestamptz `json:"applied_at"`
+	InterviewedAt pgtype.Timestamptz `json:"interviewed_at"`
 }
 
 func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) (Job, error) {
-	row := q.db.QueryRow(ctx, insertJob, arg.Position, arg.Company, arg.UserID)
+	row := q.db.QueryRow(ctx, insertJob,
+		arg.Position,
+		arg.Company,
+		arg.UserID,
+		arg.Status,
+		arg.Salary,
+		arg.JobUrl,
+		arg.Notes,
+		arg.Source,
+		arg.LocationType,
+		arg.AppliedAt,
+		arg.InterviewedAt,
+	)
 	var i Job
 	err := row.Scan(
 		&i.ID,
 		&i.Position,
 		&i.Company,
 		&i.UserID,
+		&i.Status,
+		&i.Salary,
+		&i.JobUrl,
+		&i.Notes,
+		&i.Source,
+		&i.LocationType,
+		&i.AppliedAt,
+		&i.InterviewedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const updateJob = `-- name: UpdateJob :one
 UPDATE jobs
-SET position = $2, company = $3
-WHERE id = $1 AND user_id = $4
-RETURNING id, position, company, user_id
+SET 
+	position = $2, 
+	company = $3,
+	status = $4,
+	salary = $5,
+	job_url = $6,
+	notes = $7,
+	source = $8,
+	location_type = $9,
+	applied_at = $10,
+	interviewed_at = $11
+WHERE id = $1 AND user_id = $12
+RETURNING id, position, company, user_id, status, salary, job_url, notes, source, location_type, applied_at, interviewed_at, created_at, updated_at
 `
 
 type UpdateJobParams struct {
-	ID       int32  `json:"id"`
-	Position string `json:"position"`
-	Company  string `json:"company"`
-	UserID   int32  `json:"user_id"`
+	ID            int32              `json:"id"`
+	Position      string             `json:"position"`
+	Company       string             `json:"company"`
+	Status        string             `json:"status"`
+	Salary        *string            `json:"salary"`
+	JobUrl        *string            `json:"job_url"`
+	Notes         *string            `json:"notes"`
+	Source        *string            `json:"source"`
+	LocationType  *string            `json:"location_type"`
+	AppliedAt     pgtype.Timestamptz `json:"applied_at"`
+	InterviewedAt pgtype.Timestamptz `json:"interviewed_at"`
+	UserID        int32              `json:"user_id"`
 }
 
 func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, error) {
@@ -97,6 +171,14 @@ func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, erro
 		arg.ID,
 		arg.Position,
 		arg.Company,
+		arg.Status,
+		arg.Salary,
+		arg.JobUrl,
+		arg.Notes,
+		arg.Source,
+		arg.LocationType,
+		arg.AppliedAt,
+		arg.InterviewedAt,
 		arg.UserID,
 	)
 	var i Job
@@ -105,6 +187,16 @@ func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, erro
 		&i.Position,
 		&i.Company,
 		&i.UserID,
+		&i.Status,
+		&i.Salary,
+		&i.JobUrl,
+		&i.Notes,
+		&i.Source,
+		&i.LocationType,
+		&i.AppliedAt,
+		&i.InterviewedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
