@@ -39,18 +39,28 @@ func TestGetJobs_Integration(t *testing.T) {
 	_, _ = testPool.Exec(ctx, "DELETE FROM jobs")
 
 	jobsToCreate := []InsertJobParams{
-		{Position: "Job A", Company: "Company A"},
-		{Position: "Job B", Company: "Company B"},
+		{
+			Position: "Job A",
+			Company:  "Company A",
+			UserID:   tempUserID,
+			Status:   "Applied",
+		},
+		{
+			Position: "Job B",
+			Company:  "Company B",
+			UserID:   tempUserID,
+			Status:   "Applied",
+		},
 	}
 
 	for _, j := range jobsToCreate {
 		_, err := testQueries.InsertJob(ctx, j)
+
 		if err != nil {
 			t.Fatalf("Setup failed: could not insert seed data: %v", err)
 		}
 	}
 
-	const tempUserID = 1
 	jobs, err := testQueries.GetJobs(ctx, tempUserID)
 
 	if err != nil {
