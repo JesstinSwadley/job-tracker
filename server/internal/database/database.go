@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -24,6 +25,8 @@ func DatabasePool() *pgxpool.Pool {
 }
 
 func ConnectWithURL(dbURL string) (*pgxpool.Pool, error) {
+	slog.Info("Attempting to connect database", "url_received", dbURL)
+
 	config, err := pgxpool.ParseConfig(dbURL)
 
 	if err != nil {
