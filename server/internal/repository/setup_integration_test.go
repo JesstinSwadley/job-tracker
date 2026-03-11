@@ -34,6 +34,15 @@ func TestMain(m *testing.M) {
 
 	testQueries = New(testPool)
 
+	_, err = testPool.Exec(ctx,
+		"INSERT INTO users (id, username, hash_password) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
+		tempUserID, "test_user", "hashed_password",
+	)
+
+	if err != nil {
+		log.Fatalf("failed to seed test user: %v", err)
+	}
+
 	code := m.Run()
 
 	testPool.Close()
