@@ -10,11 +10,15 @@ func TestInsertJob_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	user := createTestUser(t)
+	salary := "$100,000"
+
 	arg := InsertJobParams{
 		Position: "Backend Developer",
 		Company:  "Test Company",
 		Status:   "Applied",
-		UserID:   tempUserID,
+		Salary:   &salary,
+		UserID:   user.ID,
 	}
 
 	job, err := testQueries.InsertJob(ctx, arg)
@@ -36,19 +40,21 @@ func TestGetJobs_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, _ = testPool.Exec(ctx, "DELETE FROM jobs")
+	user := createTestUser(t)
+
+	_, _ = testPool.Exec(ctx, "DELETE FROM jobs WHERE user_id = $1", user.ID)
 
 	jobsToCreate := []InsertJobParams{
 		{
 			Position: "Job A",
 			Company:  "Company A",
-			UserID:   tempUserID,
+			UserID:   user.ID,
 			Status:   "Applied",
 		},
 		{
 			Position: "Job B",
 			Company:  "Company B",
-			UserID:   tempUserID,
+			UserID:   user.ID,
 			Status:   "Applied",
 		},
 	}
@@ -61,7 +67,7 @@ func TestGetJobs_Integration(t *testing.T) {
 		}
 	}
 
-	jobs, err := testQueries.GetJobs(ctx, tempUserID)
+	jobs, err := testQueries.GetJobs(ctx, user.ID)
 
 	if err != nil {
 		t.Fatalf("Failed to fetch jobs: %v", err)
@@ -76,10 +82,13 @@ func TestUpdateJob_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	user := createTestUser(t)
+
 	initialJob, err := testQueries.InsertJob(ctx, InsertJobParams{
 		Position: "Job A",
 		Company:  "Company A",
-		UserID:   tempUserID,
+		Status:   "Applied",
+		UserID:   user.ID,
 	})
 
 	if err != nil {
@@ -91,7 +100,7 @@ func TestUpdateJob_Integration(t *testing.T) {
 		Position: "Update Job",
 		Company:  "Update Company",
 		Status:   "Offered",
-		UserID:   tempUserID,
+		UserID:   user.ID,
 	}
 
 	updatedJob, err := testQueries.UpdateJob(ctx, updateArg)
@@ -108,7 +117,7 @@ func TestUpdateJob_Integration(t *testing.T) {
 		t.Errorf("Expected position %s, got %s", updateArg.Position, updatedJob.Position)
 	}
 
-	fetchedJob, err := testQueries.GetJobs(ctx, tempUserID)
+	fetchedJob, err := testQueries.GetJobs(ctx, user.ID)
 
 	if err != nil {
 		t.Fatalf("Failed to fetch jobs after update: %v", err)
@@ -128,24 +137,28 @@ func TestUpdateJob_Integration(t *testing.T) {
 }
 
 func TestDeleteJob_Integration(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	user := createTestUser(t)
 
 	job, _ := testQueries.InsertJob(ctx, InsertJobParams{
 		Position: "To Be Deleted",
 		Company:  "Ghost Co.",
-		UserID:   tempUserID,
+		Status:   "Applied",
+		UserID:   user.ID,
 	})
 
 	err := testQueries.DeleteJob(ctx, DeleteJobParams{
 		ID:     job.ID,
-		UserID: tempUserID,
+		UserID: user.ID,
 	})
 
 	if err != nil {
 		t.Fatalf("Failed to delete job: %v", err)
 	}
 
-	jobs, _ := testQueries.GetJobs(ctx, tempUserID)
+	jobs, _ := testQueries.GetJobs(ctx, user.ID)
 
 	for _, j := range jobs {
 		if j.ID == job.ID {

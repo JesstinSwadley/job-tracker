@@ -11,7 +11,7 @@ func TestInsertUser_Integration(t *testing.T) {
 	defer cancel()
 
 	arg := InsertUserParams{
-		Username:     "Test User",
+		Username:     "PrimaryTestUser_" + time.Now().Format("150405"),
 		HashPassword: "alied,mva",
 	}
 
@@ -26,29 +26,34 @@ func TestInsertUser_Integration(t *testing.T) {
 	}
 
 	if user.Username != arg.Username {
-		t.Errorf("Data is mismatch: expected %s, got %s", user.Username, arg.Username)
+		t.Errorf("Data is mismatch: expected %s, got %s", arg.Username, user.Username)
 	}
+
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(ctx, "DELETE FROM users WHERE id = $1", user.ID)
+	})
 }
 
 func TestInsertUser_Duplicate_Integration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, _ = testPool.Exec(ctx, "DELETE FROM users")
-
+	username := "DuplicateUser_" + time.Now().Format("150405")
 	arg := InsertUserParams{
-		Username:     "DuplicateUser",
+		Username:     username,
 		HashPassword: "some_hash",
 	}
 
-	_, err := testQueries.InsertUser(ctx, arg)
-
+	user, err := testQueries.InsertUser(ctx, arg)
 	if err != nil {
 		t.Fatalf("First insert failed: %v", err)
 	}
 
-	_, err = testQueries.InsertUser(ctx, arg)
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(ctx, "DELETE FROM users WHERE id = $1", user.ID)
+	})
 
+	_, err = testQueries.InsertUser(ctx, arg)
 	if err == nil {
 		t.Error("Expected error when inserting duplicate username, but got nil")
 	}

@@ -2,17 +2,17 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var testQueries *Queries
 var testPool *pgxpool.Pool
-
-const tempUserID int32 = 1
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -34,17 +34,30 @@ func TestMain(m *testing.M) {
 
 	testQueries = New(testPool)
 
-	_, err = testPool.Exec(ctx,
-		"INSERT INTO users (id, username, hash_password) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
-		tempUserID, "test_user", "hashed_password",
-	)
-
-	if err != nil {
-		log.Fatalf("failed to seed test user: %v", err)
-	}
-
 	code := m.Run()
 
 	testPool.Close()
 	os.Exit(code)
+}
+
+func createTestUser(t *testing.T) User {
+	ctx := context.Background()
+
+	username := fmt.Sprintf("user_%d_%d", time.Now().UnixNano(), time.Now().Second())
+
+	arg := InsertUserParams{
+		Username:     username,
+		HashPassword: "test_hashed_password",
+	}
+
+	user, err := testQueries.InsertUser(ctx, arg)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(ctx, "DELETE FROM users WHERE id = $1", user.ID)
+	})
+
+	return user
 }
