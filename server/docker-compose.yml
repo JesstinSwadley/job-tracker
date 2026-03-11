@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: devpassword
       POSTGRES_DB: jobtracker
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U devuser -d jobtracker"]
       interval: 5s

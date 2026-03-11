@@ -28,19 +28,24 @@ sqlgen:
 clean:
 	@rm -rf bin/
 
+goose-migrate-up:
+	goose -dir db/migrations postgres "postgres://postgres:postgres@localhost:5432/jobtracker?sslmode=disable" up
+
+goose-migrate-down:
+	goose -dir db/migrations postgres "postgres://postgres:postgres@localhost:5432/jobtracker?sslmode=disable" down
 
 # --- Docker Commands ---
 docker-image-build: 
 	@echo "Building Docker image $(IMAGE_NAME):$(TAG)"
-	@docker build -t $(IMAGE_NAME):$(TAG)
+	@docker build -t $(IMAGE_NAME):$(TAG) .
 
 docker-compose-up:
 	@echo "Spinning up the full stack..."
-	@docker-compose up --build
+	@docker compose up --build
 
 docker-compose-down:
 	@echo "Shutting down..."
-	@docker-compose down
+	@docker compose down
 
 docker-compose-logs:
-	@docker-compose logs -f
+	@docker compose logs -f
