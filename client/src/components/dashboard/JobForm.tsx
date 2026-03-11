@@ -1,12 +1,49 @@
 import { useState, type FormEvent } from "react";
 import { createJob, updateJob, type Job } from "../../services/jobs";
+import Input from "../ui/Input";
+import Select from "../ui/Select";
+import TextArea from "../ui/TextArea";
 
-interface NewJobFormProps {
+interface JobFormProps {
 	onSuccess: () => void;
 	jobToEdit?: Job | null;
 }
 
-const NewJobForm = ({ onSuccess, jobToEdit }: NewJobFormProps) => {
+const STATUS_OPTIONS = [
+	{ 
+		value: "Applied",
+		label: "Applied" 
+	},
+	{ 
+		value: "Interviewing",
+		label: "Interviewing" 
+	},
+	{ 
+		value: "Offered",
+		label: "Offered"
+	},
+	{ 
+		value: "Rejected",
+		label: "Rejected"
+	},
+];
+
+const LOCATION_OPTIONS = [
+	{ 
+		value: "Remote",
+		label: "Remote"
+	},
+	{ 
+		value: "On-site",
+		label: "On-site"
+	},
+	{ 
+		value: "Hybrid",
+		label: "Hybrid"
+	},
+];
+
+const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -19,20 +56,29 @@ const NewJobForm = ({ onSuccess, jobToEdit }: NewJobFormProps) => {
 		setError(null);
 
 		const formData = new FormData(e.currentTarget);
-		const position = formData.get("position") as string;
-		const company = formData.get("company") as string;
 
-		if (!position || !company) {
-			setError("Please fill out all fields.");
+		const jobData = {
+			position: formData.get("position") as string,
+			company: formData.get("company") as string,
+			status: formData.get("status") as string,
+			salary: (formData.get("salary") as string) || undefined,
+			job_url: (formData.get("job_url") as string) || undefined,
+			source: (formData.get("source") as string) || undefined,
+			location_type: (formData.get("location_type") as string) || "Remote",
+			notes: (formData.get("notes") as string) || undefined,
+		}
+
+		if (!jobData.position || !jobData.company || !jobData.status) {
+			setError("Position, Company, and Status are required");
 			setIsLoading(false);
 			return;
 		}
 
 		try {
 			if (isEditMode && jobToEdit) {
-				await updateJob(jobToEdit.id, position, company);
+				await updateJob(jobToEdit.id, jobData);
 			} else {
-				await createJob(position, company);
+				await createJob(jobData);
 			}
 
 			onSuccess();
@@ -47,48 +93,86 @@ const NewJobForm = ({ onSuccess, jobToEdit }: NewJobFormProps) => {
 		<form
 			className="space-y-4" 
 			onSubmit={handleSubmit}>
-
-				{
-					error && 
+				{error && (
 					<p
 						className="text-sm font-bold text-red-500">
 							{error}
 					</p>
-				}
+				)}
 			
 				<div
-					className="space-y-1">
-						<label 
-							className="text-sm font-bold text-black"
-							htmlFor="positionInput">
-								Position
-						</label>
-						<input
-							required
+					className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Input
+							label="Position *"
 							id="positionInput"
 							name="position"
-							defaultValue={jobToEdit?.position || ""}
 							placeholder="Web Developer"
-							type="text" 
-							className="w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-				</div>
-
-				<div
-					className="space-y-1">
-						<label 
-							className="text-sm font-bold text-black"
-							htmlFor="companyInput">
-								Company
-						</label>
-						<input
+							type="text"
 							required
+							defaultValue={jobToEdit?.position}/>
+
+						<Input
+							label="Company *"
 							id="companyInput"
 							name="company"
-							defaultValue={jobToEdit?.company || ""}
-							placeholder="Business LLC"
-							type="text" 
-							className="w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+							placeholder="Test Company LLC"
+							type="text"
+							required
+							defaultValue={jobToEdit?.company}/>
 				</div>
+
+				<div 
+					className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Select
+							label="Status"
+							id="statusInput"
+							name="status"
+							required
+							options={STATUS_OPTIONS} 
+							defaultValue={jobToEdit?.status || "Applied"}/>
+
+						<Select
+							label="Location"
+							id="locationTypeInput"
+							name="location_type"
+							options={LOCATION_OPTIONS}
+							defaultValue={jobToEdit?.location_type || "Remote"}/>
+				</div>
+
+				<div 
+					className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Input
+							label="Salary"
+							id="salaryInput"
+							name="salary"
+							placeholder="$100,000"
+							type="text"
+							defaultValue={jobToEdit?.salary}/>
+
+						<Input
+							label="Source"
+							id="sourceInput"
+							name="source"
+							placeholder="LinkedIn, Google, Indeed, etc."
+							type="text"
+							defaultValue={jobToEdit?.source}/>
+				</div>
+
+				<Input
+					label="Job URL"
+					id="urlInput"
+					name="job_url"
+					placeholder="https://company.com/careers/role."
+					type="url"
+					defaultValue={jobToEdit?.job_url}/>
+
+				<TextArea 
+					label="Notes"
+					id="notesInput"
+					name="notes"
+					placeholder="Recruiter contacted me on LinkedIn, second interview next week..."
+					rows={4}
+					defaultValue={jobToEdit?.notes}/>
 
 				<button
 					type="submit"
@@ -100,6 +184,6 @@ const NewJobForm = ({ onSuccess, jobToEdit }: NewJobFormProps) => {
 				</button>
 		</form>
 	);
-}
+};
 
-export default NewJobForm;
+export default JobForm;

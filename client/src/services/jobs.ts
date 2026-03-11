@@ -6,6 +6,14 @@ export interface Job {
 	position: string;
 	company: string;
 	user_id: number;
+	status: string;
+	salary?: string;
+	job_url?: string;
+	notes?: string;
+	source?: string;
+	location_type?: string;
+	applied_at?: string;
+	interviewed_at?: string;
 }
 
 export interface CreateJobRequest {
@@ -39,11 +47,11 @@ export const fetchJobs = async (): Promise<Job[]> => {
 	return response.json();
 }
 
-export const createJob = async (position: string, company: string): Promise<Job> => {
+export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
 	const response = await fetch(`${API_URL}/api/v1/jobs`, {
 		method: 'POST',
 		headers: getAuthHeaders(),
-		body: JSON.stringify({ position, company }),
+		body: JSON.stringify(jobData),
 	});
 
 	if (!response.ok) {
@@ -67,11 +75,11 @@ export const deleteJob = async (jobId: number): Promise<void> => {
 	}
 }
 
-export const updateJob = async (id: number, position: string, company: string): Promise<Job> => {
+export const updateJob = async (id: number, jobData: Partial<Job>): Promise<Job> => {
 	const response = await fetch(`${API_URL}/api/v1/jobs/${id}`, {
 		method: 'PUT',
 		headers: getAuthHeaders(),
-		body: JSON.stringify({ position, company }),
+		body: JSON.stringify(jobData),
 	});
 
 	if (!response.ok) {

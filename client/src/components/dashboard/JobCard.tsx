@@ -1,21 +1,22 @@
+import { Calendar, DollarSign, ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { deleteJob, type Job } from "../../services/jobs";
 
 interface JobCardProps {
 	job: Job;
-	onDeleteSuccess: () => void;
 	onEditClick: () => void;
+	onDeleteSuccess: () => void;
 }
 
-const JobCard = ({ job, onDeleteSuccess, onEditClick }: JobCardProps) => {
-	const getStatusStyles = (status: string = "Applied") => {
-		const styles: Record<string, string> = {
+const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
+	const getStatusColor = (status: string) => {
+		const colors: Record<string, string> = {
 			"Applied": "bg-blue-100 text-blue-700 border-blue-200",
 			"Interviewing": "bg-yellow-100 text-yellow-700 border-yellow-200",
 			"Offered": "bg-green-100 text-green-700 border-green-200",
 			"Rejected": "bg-red-100 text-red-700 border-red-200",
 		};
-
-		return styles[status] || styles["Applied"];
+		
+		return colors[status] || "bg-gray-100 text-gray-700 border-gray-200";
 	};
 
 	const handleDelete = async (e: React.MouseEvent) => {
@@ -33,52 +34,104 @@ const JobCard = ({ job, onDeleteSuccess, onEditClick }: JobCardProps) => {
 
 	return (
 		<div 
-			className="group relative flex items-center justify-between rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
+			className="group relative flex flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
 				<div 
-					className="flex items-center gap-4">
-						<div 
-							className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-lg font-bold text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
-								{job.company.charAt(0).toUpperCase()}
-						</div>
-
+					className="flex items-start justify-between mb-4">
 						<div>
 							<h3 
 								className="text-lg font-bold text-gray-900 leading-tight">
 									{job.position}
 							</h3>
 							<p 
-								className="text-sm font-medium text-gray-500">
+								className="text-sm font-semibold text-blue-600">
 									{job.company}
 							</p>
 						</div>
+
+					<span 
+						className={`rounded-full border px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${getStatusColor(job.status)}`}>
+							{job.status}
+					</span>
 				</div>
 
 				<div 
-					className="flex items-center gap-6">
-						<span 
-							className={`rounded-full border px-3 py-1 text-xs font-bold transition ${getStatusStyles("Applied")}`}>
-								Applied
-						</span>
+					className="grid grid-cols-2 gap-y-2 text-sm text-gray-500 mb-4">
+					<div 
+						className="flex items-center gap-1.5">
+							<MapPin 
+								size={14} 
+								className="text-gray-400" />
+							<span>
+								{job.location_type || "Remote"}
+							</span> 
+					</div>
 
+					{job.salary && (
+						<div 
+							className="flex items-center gap-1.5">
+								<DollarSign 
+									size={14} 
+									className="text-gray-400" />
+								<span 
+									className="truncate">
+										{job.salary}
+								</span>
+						</div>
+					)}
 
-					<button 
-						onClick={onEditClick}
-						title="Edit Application"
-						className="text-gray-300 hover:text-blue-600 transition p-1">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-								<path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-							</svg>
-					</button>
-
-					<button
-						onClick={handleDelete}
-						title="Delete Application"
-						className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-								<path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-							</svg>
-					</button>
+					{job.source && (
+						<div className="flex items-center gap-1.5">
+							<Calendar 
+								size={14} 
+								className="text-gray-400" />
+							<span 
+								className="truncate">
+									{job.source}
+							</span>
+						</div>
+					)}
 				</div>
+
+				<div 
+					className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
+					<div>
+						{job.job_url && (
+							<a 
+								href={job.job_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors">
+								<ExternalLink 
+									size={14} />
+								Posting
+							</a>
+						)}
+					</div>
+
+					<div 
+						className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+							<button
+								onClick={onEditClick}
+								className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+
+									<Pencil 
+										size={16} />
+									<span>
+										Edit
+									</span>
+							</button>
+
+							<button
+								onClick={handleDelete}
+								className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-500 transition">
+									<Trash2 
+										size={16} />
+									<span>
+										Delete
+									</span>
+							</button>
+					</div>
+				</div>                      
 		</div>
 	);
 };
