@@ -6,16 +6,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JesstinSwadley/job-tracker/internal/middleware"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type JobRepo interface {
-	InsertJob(ctx context.Context, position, company string, userID int32) (repository.Job, error)
+	InsertJob(ctx context.Context, arg repository.InsertJobParams) (repository.Job, error)
 	GetJobs(ctx context.Context, userID int32) ([]repository.Job, error)
-	UpdateJob(ctx context.Context, id, userID int32, position, company string) (repository.Job, error)
-	DeleteJob(ctx context.Context, id, userID int32) error
+	UpdateJob(ctx context.Context, arg repository.UpdateJobParams) (repository.Job, error)
+	DeleteJob(ctx context.Context, arg repository.DeleteJobParams) error
 }
 
 type JobHandler struct {
@@ -34,14 +36,28 @@ func (h *JobHandler) errorResponse(w http.ResponseWriter, status int, message st
 }
 
 type JobRequest struct {
-	Position string `json:"position"`
-	Company  string `json:"company"`
+	Position      string     `json:"position"`
+	Company       string     `json:"company"`
+	Status        string     `json:"status"`
+	Salary        *string    `json:"salary"`
+	JobUrl        *string    `json:"job_url"`
+	Notes         *string    `json:"notes"`
+	Source        *string    `json:"source"`
+	LocationType  *string    `json:"location_type"`
+	AppliedAt     *time.Time `json:"applied_at"`
+	InterviewedAt *time.Time `json:"interviewed_at"`
+}
+
+func toTimestamptz(t *time.Time) pgtype.Timestamptz {
+	if t == nil {
+		return pgtype.Timestamptz{Valid: false}
+	}
+
+	return pgtype.Timestamptz{Time: *t, Valid: true}
 }
 
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	var reqBody JobRequest
 
 	userID, err := middleware.GetUserID(r.Context())
 
@@ -50,6 +66,8 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	var reqBody JobRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -62,7 +80,23 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Repo.InsertJob(r.Context(), reqBody.Position, reqBody.Company, userID)
+	if reqBody.Status == "" {
+		reqBody.Status = "Applied"
+	}
+
+	job, err := h.Repo.InsertJob(r.Context(), repository.InsertJobParams{
+		Position:      reqBody.Position,
+		Company:       reqBody.Company,
+		UserID:        userID,
+		Status:        reqBody.Status,
+		Salary:        reqBody.Salary,
+		JobUrl:        reqBody.JobUrl,
+		Notes:         reqBody.Notes,
+		Source:        reqBody.Source,
+		LocationType:  reqBody.LocationType,
+		AppliedAt:     toTimestamptz(reqBody.AppliedAt),
+		InterviewedAt: toTimestamptz(reqBody.InterviewedAt),
+	})
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to create job")
@@ -134,7 +168,20 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Repo.UpdateJob(r.Context(), int32(parsedID), userID, reqBody.Position, reqBody.Company)
+	job, err := h.Repo.UpdateJob(r.Context(), repository.UpdateJobParams{
+		ID:            int32(parsedID),
+		Position:      reqBody.Position,
+		Company:       reqBody.Company,
+		Status:        reqBody.Status,
+		Salary:        reqBody.Salary,
+		JobUrl:        reqBody.JobUrl,
+		Notes:         reqBody.Notes,
+		Source:        reqBody.Source,
+		LocationType:  reqBody.LocationType,
+		AppliedAt:     toTimestamptz(reqBody.AppliedAt),
+		InterviewedAt: toTimestamptz(reqBody.InterviewedAt),
+		UserID:        userID,
+	})
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to update job")
@@ -158,7 +205,6 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idStr := r.PathValue("id")
-
 	parsedID, err := strconv.ParseInt(idStr, 10, 32)
 
 	if err != nil {
@@ -167,7 +213,10 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Repo.DeleteJob(r.Context(), int32(parsedID), userID)
+	err = h.Repo.DeleteJob(r.Context(), repository.DeleteJobParams{
+		ID:     int32(parsedID),
+		UserID: userID,
+	})
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to delete job")

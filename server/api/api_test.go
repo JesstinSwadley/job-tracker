@@ -15,11 +15,20 @@ import (
 
 type mockJobRepo struct{}
 
-func (*mockJobRepo) InsertJob(_ context.Context, position, company string, userID int32) (repository.Job, error) {
+func (*mockJobRepo) InsertJob(_ context.Context, arg repository.InsertJobParams) (repository.Job, error) {
 	return repository.Job{
-		ID:       1,
-		Position: position,
-		Company:  company,
+		ID:            1,
+		Position:      arg.Position,
+		Company:       arg.Company,
+		UserID:        arg.UserID,
+		Status:        arg.Status,
+		Salary:        arg.Salary,
+		JobUrl:        arg.JobUrl,
+		Notes:         arg.Notes,
+		Source:        arg.Source,
+		LocationType:  arg.LocationType,
+		AppliedAt:     arg.AppliedAt,
+		InterviewedAt: arg.InterviewedAt,
 	}, nil
 }
 
@@ -33,15 +42,24 @@ func (*mockJobRepo) GetJobs(_ context.Context, userID int32) ([]repository.Job, 
 	}, nil
 }
 
-func (*mockJobRepo) UpdateJob(_ context.Context, id, userID int32, position, company string) (repository.Job, error) {
+func (*mockJobRepo) UpdateJob(_ context.Context, arg repository.UpdateJobParams) (repository.Job, error) {
 	return repository.Job{
-		ID:       id,
-		Position: position,
-		Company:  company,
+		ID:            arg.ID,
+		Position:      arg.Position,
+		Company:       arg.Company,
+		UserID:        arg.UserID,
+		Status:        arg.Status,
+		Salary:        arg.Salary,
+		JobUrl:        arg.JobUrl,
+		Notes:         arg.Notes,
+		Source:        arg.Source,
+		LocationType:  arg.LocationType,
+		AppliedAt:     arg.AppliedAt,
+		InterviewedAt: arg.InterviewedAt,
 	}, nil
 }
 
-func (*mockJobRepo) DeleteJob(_ context.Context, userID, id int32) error {
+func (*mockJobRepo) DeleteJob(_ context.Context, arg repository.DeleteJobParams) error {
 	return nil
 }
 
@@ -98,7 +116,7 @@ func TestApiRouting(t *testing.T) {
 			name:   "POST job works with valid token",
 			method: http.MethodPost,
 			url:    "/api/v1/jobs",
-			body:   `{"position": "Backend Dev", "company": "Test Company"}`,
+			body:   `{"position": "Backend Dev", "company": "Test Company", "status": "Applied"}`,
 			setupHeader: func(r *http.Request) {
 				r.Header.Set("Authorization", authHeader)
 			},
@@ -117,7 +135,7 @@ func TestApiRouting(t *testing.T) {
 			name:   "PUT jobs works with valid token",
 			method: http.MethodPut,
 			url:    "/api/v1/jobs/1",
-			body:   `{"position": "Backend Dev", "company": "Test Company"}`,
+			body:   `{"position": "Backend Dev", "company": "Test Company", "status": "Offered"}`,
 			setupHeader: func(r *http.Request) {
 				r.Header.Set("Authorization", authHeader)
 			},

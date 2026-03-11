@@ -13,6 +13,7 @@ func TestInsertJob_Integration(t *testing.T) {
 	arg := InsertJobParams{
 		Position: "Backend Developer",
 		Company:  "Test Company",
+		Status:   "Applied",
 		UserID:   tempUserID,
 	}
 
@@ -77,6 +78,7 @@ func TestUpdateJob_Integration(t *testing.T) {
 		ID:       initialJob.ID,
 		Position: "Update Job",
 		Company:  "Update Company",
+		Status:   "Offered",
 		UserID:   tempUserID,
 	}
 

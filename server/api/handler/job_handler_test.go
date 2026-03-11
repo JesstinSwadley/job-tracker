@@ -23,16 +23,24 @@ type mockJobRepo struct {
 	err  error
 }
 
-func (m *mockJobRepo) InsertJob(_ context.Context, position, company string, userID int32) (repository.Job, error) {
+func (m *mockJobRepo) InsertJob(_ context.Context, arg repository.InsertJobParams) (repository.Job, error) {
 	if m.err != nil {
 		return repository.Job{}, m.err
 	}
 
 	return repository.Job{
-		ID:       1,
-		Position: position,
-		Company:  company,
-		UserID:   userID,
+		ID:            1,
+		Position:      arg.Position,
+		Company:       arg.Company,
+		UserID:        arg.UserID,
+		Status:        arg.Status,
+		Salary:        arg.Salary,
+		JobUrl:        arg.JobUrl,
+		Notes:         arg.Notes,
+		Source:        arg.Source,
+		LocationType:  arg.LocationType,
+		AppliedAt:     arg.AppliedAt,
+		InterviewedAt: arg.InterviewedAt,
 	}, nil
 }
 
@@ -44,20 +52,28 @@ func (m *mockJobRepo) GetJobs(_ context.Context, userID int32) ([]repository.Job
 	return m.jobs, nil
 }
 
-func (m *mockJobRepo) UpdateJob(_ context.Context, id, userID int32, position, company string) (repository.Job, error) {
+func (m *mockJobRepo) UpdateJob(_ context.Context, arg repository.UpdateJobParams) (repository.Job, error) {
 	if m.err != nil {
 		return repository.Job{}, m.err
 	}
 
 	return repository.Job{
-		ID:       id,
-		Position: position,
-		Company:  company,
-		UserID:   userID,
+		ID:            arg.ID,
+		Position:      arg.Position,
+		Company:       arg.Company,
+		UserID:        arg.UserID,
+		Status:        arg.Status,
+		Salary:        arg.Salary,
+		JobUrl:        arg.JobUrl,
+		Notes:         arg.Notes,
+		Source:        arg.Source,
+		LocationType:  arg.LocationType,
+		AppliedAt:     arg.AppliedAt,
+		InterviewedAt: arg.InterviewedAt,
 	}, nil
 }
 
-func (m *mockJobRepo) DeleteJob(ctx context.Context, id, userID int32) error {
+func (m *mockJobRepo) DeleteJob(ctx context.Context, arg repository.DeleteJobParams) error {
 	return m.err
 }
 
@@ -75,7 +91,7 @@ func TestCreateJob(t *testing.T) {
 		{
 			name:           "Success: Valid job creation",
 			method:         http.MethodPost,
-			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			body:           `{"position": "Backend Dev", "company": "Test Company", "status": "Applied"}`,
 			expectedStatus: http.StatusCreated,
 			expectedID:     1,
 		},
@@ -90,14 +106,14 @@ func TestCreateJob(t *testing.T) {
 		{
 			name:           "Error: Empty position",
 			method:         http.MethodPost,
-			body:           `{"position": "", "company": "Test Company"}`,
+			body:           `{"position": "", "company": "Test Company", "status": "Applied"}`,
 			expectedStatus: http.StatusBadRequest,
 			expectedErrMsg: "Position and Company are required",
 		},
 		{
 			name:           "Error: Empty Company",
 			method:         http.MethodPost,
-			body:           `{"position": "Backend Dev", "company": ""}`,
+			body:           `{"position": "Backend Dev", "company": "", "status": "Applied"}`,
 			expectedStatus: http.StatusBadRequest,
 			expectedErrMsg: "Position and Company are required",
 		},
@@ -276,7 +292,7 @@ func TestUpdateJob(t *testing.T) {
 		{
 			name:           "Success: Valid Update",
 			jobID:          "1",
-			body:           `{"position": "Backend Dev", "company": "Test Company"}`,
+			body:           `{"position": "Backend Dev", "company": "Test Company", "status": "Offered"}`,
 			expectedStatus: http.StatusOK,
 			expectedID:     1,
 		},

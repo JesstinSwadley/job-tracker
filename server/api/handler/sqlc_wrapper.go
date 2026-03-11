@@ -10,32 +10,20 @@ type SQLCJobRepo struct {
 	Queries *repository.Queries
 }
 
-func (s *SQLCJobRepo) InsertJob(ctx context.Context, position, company string, userID int32) (repository.Job, error) {
-	return s.Queries.InsertJob(ctx, repository.InsertJobParams{
-		Position: position,
-		Company:  company,
-		UserID:   userID,
-	})
+func (s *SQLCJobRepo) InsertJob(ctx context.Context, arg repository.InsertJobParams) (repository.Job, error) {
+	return s.Queries.InsertJob(ctx, arg)
 }
 
 func (s *SQLCJobRepo) GetJobs(ctx context.Context, userID int32) ([]repository.Job, error) {
 	return s.Queries.GetJobs(ctx, userID)
 }
 
-func (s *SQLCJobRepo) UpdateJob(ctx context.Context, id, userID int32, position, company string) (repository.Job, error) {
-	return s.Queries.UpdateJob(ctx, repository.UpdateJobParams{
-		ID:       id,
-		UserID:   userID,
-		Position: position,
-		Company:  company,
-	})
+func (s *SQLCJobRepo) UpdateJob(ctx context.Context, arg repository.UpdateJobParams) (repository.Job, error) {
+	return s.Queries.UpdateJob(ctx, arg)
 }
 
-func (s *SQLCJobRepo) DeleteJob(ctx context.Context, userID, id int32) error {
-	return s.Queries.DeleteJob(ctx, repository.DeleteJobParams{
-		ID:     id,
-		UserID: userID,
-	})
+func (s *SQLCJobRepo) DeleteJob(ctx context.Context, arg repository.DeleteJobParams) error {
+	return s.Queries.DeleteJob(ctx, arg)
 }
 
 type SQLCUserRepo struct {
