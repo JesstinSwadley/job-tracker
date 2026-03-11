@@ -77,7 +77,9 @@ func TestUpdateJob_Integration(t *testing.T) {
 	defer cancel()
 
 	initialJob, err := testQueries.InsertJob(ctx, InsertJobParams{
-		Position: "Job A", Company: "Company A",
+		Position: "Job A",
+		Company:  "Company A",
+		UserID:   tempUserID,
 	})
 
 	if err != nil {
