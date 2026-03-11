@@ -29,10 +29,10 @@ clean:
 	@rm -rf bin/
 
 goose-migrate-up:
-	goose -dir db/migrations postgres "postgres://postgres:postgres@localhost:5432/jobtracker?sslmode=disable" up
+	goose -dir db/migrations postgres "postgres://devuser:devpassword@localhost:5433/jobtracker?sslmode=disable" up
 
 goose-migrate-down:
-	goose -dir db/migrations postgres "postgres://postgres:postgres@localhost:5432/jobtracker?sslmode=disable" down
+	goose -dir db/migrations postgres "postgres://devuser:devpassword@localhost:5433/jobtracker?sslmode=disable" down
 
 # --- Docker Commands ---
 docker-image-build: 
