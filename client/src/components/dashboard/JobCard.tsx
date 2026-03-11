@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Calendar, DollarSign, ExternalLink, MapPin, Pencil, Trash2 } from "lucide-react";
 import { deleteJob, type Job } from "../../services/jobs";
 
@@ -136,4 +137,4 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 	);
 };
 
-export default JobCard;
+export default memo(JobCard);

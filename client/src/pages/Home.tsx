@@ -1,34 +1,8 @@
-import { useState } from "react"
-import JobTable from "../components/JobTable"
-import RegisterForm from "../components/auth/RegisterForm";
-
 const Home = () => {
-	const [showNewPopup, setShowNewPopup] = useState<boolean>(false);
-
-	const openNewForm = () => {
-		setShowNewPopup(true)
-	}
-
-	const closeNewPopUp = () => {
-		setShowNewPopup(false)
-	}
 
 	return (
 		<>
-			<button 
-				className="mr-3 px-4 py-2 rounded bg-blue-600 text-zinc-100 font-semibold hover:bg-blue-700"
-				onClick={openNewForm}>
-					<span>New Job</span>
-			</button>
-
-			<div>
-				<RegisterForm />
-			</div>
-
-			<section
-				className="flex justify-center m-5">
-				<JobTable />
-			</section>
+			<h1>Home Page</h1>
 		</>
 	)
 }
