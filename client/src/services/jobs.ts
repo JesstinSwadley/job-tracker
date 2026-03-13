@@ -1,6 +1,3 @@
-// Assign Backend API URL to variable
-const API_URL = import.meta.env.VITE_API_URL
-
 export interface Job {
 	id: number;
 	position: string;
@@ -35,7 +32,7 @@ const getAuthHeaders = () => {
 }
 
 export const fetchJobs = async (): Promise<Job[]> => {
-	const response = await fetch(`${API_URL}/api/v1/jobs`, {
+	const response = await fetch(`/api/v1/jobs`, {
 		method: 'GET',
 		headers: getAuthHeaders(),
 	});
@@ -48,7 +45,7 @@ export const fetchJobs = async (): Promise<Job[]> => {
 }
 
 export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`${API_URL}/api/v1/jobs`, {
+	const response = await fetch(`/api/v1/jobs`, {
 		method: 'POST',
 		headers: getAuthHeaders(),
 		body: JSON.stringify(jobData),
@@ -64,7 +61,7 @@ export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
 }
 
 export const deleteJob = async (jobId: number): Promise<void> => {
-	const response = await fetch(`${API_URL}/api/v1/jobs/${jobId}`, {
+	const response = await fetch(`/api/v1/jobs/${jobId}`, {
 		method: 'DELETE',
 		headers: getAuthHeaders(),
 	});
@@ -76,7 +73,7 @@ export const deleteJob = async (jobId: number): Promise<void> => {
 }
 
 export const updateJob = async (id: number, jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`${API_URL}/api/v1/jobs/${id}`, {
+	const response = await fetch(`/api/v1/jobs/${id}`, {
 		method: 'PUT',
 		headers: getAuthHeaders(),
 		body: JSON.stringify(jobData),

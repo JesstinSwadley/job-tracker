@@ -1,13 +1,10 @@
-// Assign Backend API URL to variable
-const API_URL = import.meta.env.VITE_API_URL
-
 export interface AuthResponse {
 	token: string;
 	username: string;
 }
 
 export const loginRequest = async (username: string, password: string): Promise<AuthResponse> => {
-	const response = await fetch(`${API_URL}/api/v1/login`, {
+	const response = await fetch(`/api/v1/login`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
@@ -27,7 +24,7 @@ export const loginRequest = async (username: string, password: string): Promise<
 }
 
 export const registerRequest = async (username: string, password: string) => {
-	const response = await fetch(`${API_URL}/api/v1/register`, {
+	const response = await fetch(`/api/v1/register`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
