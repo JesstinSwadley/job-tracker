@@ -1,0 +1,20 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Dependencies
+vendor/
+
+# Docker/Makefile stuff 
+Dockerfile
+Makefile
+docker-compose.yml
+
+# Version Control & OS noise
+.git
+.gitignore
+.env
+.DS_Store
