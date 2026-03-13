@@ -50,8 +50,8 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string          `json:"token"`
-	User  repository.User `json:"user"`
+	Token    string `json:"token"`
+	Username string `json:"username"`
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +123,8 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	user.HashPassword = ""
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(LoginResponse{
-		Token: token,
-		User:  user,
+		Token:    token,
+		Username: user.Username,
 	})
 }
 
@@ -180,7 +180,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	user.HashPassword = ""
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(LoginResponse{
-		Token: token,
-		User:  user,
+		Token:    token,
+		Username: user.Username,
 	})
 }
