@@ -1,10 +1,12 @@
 export interface AuthResponse {
-	token: string;
-	username: string;
+    token: string;
+    username: string;
 }
 
+const API_BASE = '/api/v1';
+
 export const loginRequest = async (username: string, password: string): Promise<AuthResponse> => {
-	const response = await fetch(`/api/v1/login`, {
+	const response = await fetch(`${API_BASE}/login`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
@@ -15,16 +17,17 @@ export const loginRequest = async (username: string, password: string): Promise<
 			})
 		});
 
+	const data = await response.json();
+	
 	if (!response.ok) {
-		const errorData = await response.json();
-		throw new Error(errorData.error || 'Login failed');
+		throw new Error(data.error || 'Login failed');
 	}
 
-	return response.json();
+	return data as AuthResponse;
 }
 
 export const registerRequest = async (username: string, password: string) => {
-	const response = await fetch(`/api/v1/register`, {
+	const response = await fetch(`${API_BASE}/register`, {
 			headers: {
 				'Content-Type': 'application/json',
 			},
@@ -35,9 +38,10 @@ export const registerRequest = async (username: string, password: string) => {
 			})
 		});
 
+	const data = await response.json();
+
 	if (!response.ok) {
-		const errorData = await response.json();
-		throw new Error(errorData.error || 'Register failed');
+		throw new Error(data.error || 'Register failed');
 	}
 
 	return response.json();
