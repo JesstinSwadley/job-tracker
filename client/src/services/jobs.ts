@@ -18,6 +18,8 @@ export interface CreateJobRequest {
 	company: string;
 }
 
+const API_BASE = '/api/v1';
+
 const getAuthHeaders = () => {
 	const token = localStorage.getItem('token');
 
@@ -32,7 +34,7 @@ const getAuthHeaders = () => {
 }
 
 export const fetchJobs = async (): Promise<Job[]> => {
-	const response = await fetch(`/api/v1/jobs`, {
+	const response = await fetch(`${API_BASE}/jobs`, {
 		method: 'GET',
 		headers: getAuthHeaders(),
 	});
@@ -45,7 +47,7 @@ export const fetchJobs = async (): Promise<Job[]> => {
 }
 
 export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`/api/v1/jobs`, {
+	const response = await fetch(`${API_BASE}/jobs`, {
 		method: 'POST',
 		headers: getAuthHeaders(),
 		body: JSON.stringify(jobData),
@@ -61,7 +63,7 @@ export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
 }
 
 export const deleteJob = async (jobId: number): Promise<void> => {
-	const response = await fetch(`/api/v1/jobs/${jobId}`, {
+	const response = await fetch(`${API_BASE}/jobs/${jobId}`, {
 		method: 'DELETE',
 		headers: getAuthHeaders(),
 	});
@@ -73,7 +75,7 @@ export const deleteJob = async (jobId: number): Promise<void> => {
 }
 
 export const updateJob = async (id: number, jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`/api/v1/jobs/${id}`, {
+	const response = await fetch(`${API_BASE}/jobs/${id}`, {
 		method: 'PUT',
 		headers: getAuthHeaders(),
 		body: JSON.stringify(jobData),
