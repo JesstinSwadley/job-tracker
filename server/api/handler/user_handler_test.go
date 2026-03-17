@@ -41,7 +41,6 @@ func TestRegisterUser(t *testing.T) {
 			name:           "Success: Valid User Registration",
 			body:           `{"username": "testuser", "password": "securepassword123"}`,
 			expectedStatus: http.StatusCreated,
-			expectedID:     0,
 		},
 		{
 			name:           "Error: Password Too Short",
@@ -97,7 +96,7 @@ func TestRegisterUser(t *testing.T) {
 						return repository.User{}, tt.mockErr
 					}
 
-					return repository.User{ID: 1, Username: arg.Username, HashPassword: arg.HashPassword}, nil
+					return repository.User{ID: 1, Username: arg.Username}, nil
 				},
 			}
 
@@ -117,18 +116,18 @@ func TestRegisterUser(t *testing.T) {
 			}
 
 			if tt.expectedStatus == http.StatusCreated {
-				var user repository.User
+				var resp LoginResponse
 
-				if err := json.NewDecoder(w.Body).Decode(&user); err != nil {
+				if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
 					t.Fatalf("failed to decode user: %v", err)
 				}
 
-				if user.ID != tt.expectedID {
-					t.Errorf("expected user ID %d, got %d", tt.expectedID, user.ID)
+				if resp.Token == "" {
+					t.Error("Expected token in response, got empty string")
 				}
 
-				if user.HashPassword != "" {
-					t.Error("Security violation: password hash was leaked in JSON response")
+				if resp.Username == "" {
+					t.Error("Expected username in response, got empty string")
 				}
 			} else {
 				var errResp map[string]string
@@ -239,12 +238,8 @@ func TestLoginUser(t *testing.T) {
 					t.Error("expected token in resposne, got empty string")
 				}
 
-				if resp.User.Username != tt.mockUser.Username {
-					t.Errorf("expected username %s, got %s", tt.mockUser.Username, resp.User.Username)
-				}
-
-				if resp.User.HashPassword != "" {
-					t.Error("security violation: hash password leaked in login response")
+				if resp.Username != tt.mockUser.Username {
+					t.Errorf("expected username %s, got %s", tt.mockUser.Username, resp.Username)
 				}
 			} else if tt.expectedErrMsg != "" {
 				var errResp map[string]string

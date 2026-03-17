@@ -120,7 +120,6 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.HashPassword = ""
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(LoginResponse{
 		Token:    token,
@@ -177,7 +176,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.HashPassword = ""
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(LoginResponse{
 		Token:    token,
