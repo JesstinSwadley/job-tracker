@@ -222,6 +222,8 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		h.errorResponse(w, http.StatusInternalServerError, "Failed to delete job")
+
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

@@ -132,7 +132,7 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 									</span>
 							</button>
 					</div>
-				</div>                      
+				</div> 
 		</div>
 	);
 };
