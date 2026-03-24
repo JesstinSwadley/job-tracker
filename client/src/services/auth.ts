@@ -44,5 +44,5 @@ export const registerRequest = async (username: string, password: string) => {
 		throw new Error(data.error || 'Register failed');
 	}
 
-	return response.json();
+	return data;
 }
