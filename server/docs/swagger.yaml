@@ -1,0 +1,12 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact:
+    email: contact@jesstin.com
+    name: Jesstin Swadley
+    url: https://jesstin.com/support
+  description: This is a job tracking server.
+  title: Job Tracker API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

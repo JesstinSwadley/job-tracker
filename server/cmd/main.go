@@ -18,6 +18,16 @@ import (
 	"github.com/rs/cors"
 )
 
+// @title Job Tracker API
+// @version 1.0
+// @description This is a job tracking server.
+
+// @contact.name Jesstin Swadley
+// @contact.url https://jesstin.com/support
+// @contact.email contact@jesstin.com
+
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
