@@ -54,6 +54,17 @@ type LoginResponse struct {
 	Username string `json:"username"`
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Description  Create a new user account for the job tracker
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      handler.RegisterRequest  true  "Registration Info"
+// @Success      201      {object}  LoginResponse
+// @Failure      400      {object}  map[string]string "Invalid input"
+// @Failure      409      {object}  map[string]string "User already exists"
+// @Router       /register [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -127,6 +138,16 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Login godoc
+// @Summary      User Login
+// @Description  Authenticate user and return a JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      LoginRequest  true  "Login Credentials"
+// @Success      200      {object}  LoginResponse
+// @Failure      401      {object}  map[string]string "Unauthorized"
+// @Router       /login [post]
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
