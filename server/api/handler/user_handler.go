@@ -60,7 +60,7 @@ type LoginResponse struct {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      handler.RegisterRequest  true  "Registration Info"
+// @Param        request  body      RegisterRequest  true  "Registration Info"
 // @Success      201      {object}  LoginResponse
 // @Failure      400      {object}  map[string]string "Invalid input"
 // @Failure      409      {object}  map[string]string "User already exists"
