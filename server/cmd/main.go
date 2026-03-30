@@ -12,6 +12,7 @@ import (
 
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/api/handler"
+	_ "github.com/JesstinSwadley/job-tracker/docs"
 	"github.com/JesstinSwadley/job-tracker/internal/auth"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
@@ -19,6 +20,12 @@ import (
 )
 
 // @title Job Tracker API
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type 'Bearer ' followed by your JWT token.
+
 // @version 1.0
 // @description This is a job tracking server.
 

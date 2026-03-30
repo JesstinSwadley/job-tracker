@@ -50,6 +50,19 @@ type JobRequest struct {
 	InterviewedAt *time.Time `json:"interviewed_at"`
 }
 
+type JobResponse struct {
+	Position      string     `json:"position"`
+	Company       string     `json:"company"`
+	Status        string     `json:"status"`
+	Salary        *string    `json:"salary"`
+	JobUrl        *string    `json:"job_url"`
+	Notes         *string    `json:"notes"`
+	Source        *string    `json:"source"`
+	LocationType  *string    `json:"location_type"`
+	AppliedAt     *time.Time `json:"applied_at"`
+	InterviewedAt *time.Time `json:"interviewed_at"`
+}
+
 func toTimestamptz(t *time.Time) pgtype.Timestamptz {
 	if t == nil {
 		return pgtype.Timestamptz{Valid: false}
@@ -58,6 +71,15 @@ func toTimestamptz(t *time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: *t, Valid: true}
 }
 
+// CreateJob godoc
+// @Summary      Create a new job
+// @Tags         jobs
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      JobRequest  true  "Job Details"
+// @Success      201      {object}  JobResponse
+// @Router       /jobs [post]
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -110,6 +132,15 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
+// GetJobs godoc
+// @Summary      Get all jobs
+// @Description  Retrieve a list of all job applications for the logged-in user
+// @Tags         jobs
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}   JobResponse
+// @Failure      401  {object}  map[string]string
+// @Router       /jobs [get]
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -137,6 +168,16 @@ func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jobs)
 }
 
+// UpdateJob godoc
+// @Summary      Update a job
+// @Tags         jobs
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path      int         true  "Job ID"
+// @Param        request  body      JobRequest  true  "Updated Job Details"
+// @Success      200      {object}  JobResponse
+// @Router       /jobs/{id} [put]
 func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -195,6 +236,13 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
+// DeleteJob godoc
+// @Summary      Delete a job
+// @Tags         jobs
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Job ID"
+// @Success      204  "No Content"
+// @Router       /jobs/{id} [delete]
 func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
