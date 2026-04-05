@@ -3,6 +3,7 @@ import { createJob, updateJob, type Job } from "../../services/jobs";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 import TextArea from "../ui/TextArea";
+import toast from "react-hot-toast";
 
 interface JobFormProps {
 	onSuccess: () => void;
@@ -77,13 +78,19 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 		try {
 			if (isEditMode && jobToEdit) {
 				await updateJob(jobToEdit.id, jobData);
+
+				toast.success(`${jobData.position} at ${jobData.company} has been updated`);
 			} else {
 				await createJob(jobData);
+
+				toast.success(`${jobData.position} at ${jobData.company} has been created`);
 			}
 
 			onSuccess();
 		} catch (err: any) {
 			setError(err.message || "Something went wrong. Please try again.");
+
+			toast.error(err.message || `There was an error with ${jobData.position} at ${jobData.company}`);
 		} finally {
 			setIsLoading(false);
 		}

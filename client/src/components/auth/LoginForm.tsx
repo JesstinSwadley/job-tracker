@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { loginRequest } from '../../services/auth';
+import toast from 'react-hot-toast';
 
 const LoginForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +20,14 @@ const LoginForm = () => {
 			const data = await loginRequest(username, password);
 
 			localStorage.setItem('token', data.token);
+
+			toast.success(`Welcome back, ${data.username}`);
 			
 			navigate('/dashboard');
 		} catch (err: any) {
 			setError(err.message);
+
+			toast.error(err.message || "Login failed");
 		} finally {
 			setIsLoading(false);
 		}

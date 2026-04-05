@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { registerRequest } from '../../services/auth';
+import toast from 'react-hot-toast';
 
 const RegisterForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +18,9 @@ const RegisterForm = () => {
 		const confirmPassword = formData.get("confirmPassword") as string;
 
 		if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
+			setError("Passwords do not match");
+			return;
+		}
 
 		setIsLoading(true);
 
@@ -28,9 +29,13 @@ const RegisterForm = () => {
 
 			localStorage.setItem('token', data.token);
 
+			toast.success(`Welcome back, ${data.username}`);
+
 			navigate('/dashboard');
 		} catch (err: any) {
 			setError(err.message);
+
+			toast.error(err.message || "Register failed");
 		} finally {
 			setIsLoading(false);
 		}
@@ -96,7 +101,7 @@ const RegisterForm = () => {
 						<label 
 							htmlFor="confirmPassword"
 							className="text-sm font-bold text-black">
-								Confrim Password
+								Confirm Password
 						</label>
 						<input 
 							required
