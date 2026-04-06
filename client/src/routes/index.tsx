@@ -6,6 +6,7 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 const Login = lazy(() => import("../pages/auth/Login"));
 const Register = lazy(() => import("../pages/auth/Register"));
 const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
+const NotFound = lazy(() => import("../pages/NotFound"));
 
 const PageLoader = () => (
 	<div 
@@ -22,16 +23,16 @@ const AppRoutes = () => {
 				<Routes>
 					<Route 
 						path="/login" 
-						Component={Login} />
+						element={<Login />} />
 					<Route 
 						path="/register" 
-						Component={Register} />
+						element={<Register />} />
 
 					<Route 
 						element={<ProtectedRoute />}>
 							<Route 
 								path="/dashboard" 
-								Component={Dashboard} />
+								element={<Dashboard />} />
 							
 							<Route 
 								path="/jobs" 
@@ -44,7 +45,7 @@ const AppRoutes = () => {
 
 					<Route 
 						path="*" 
-						element={<div className="p-10 text-center">404 - Page Not Found</div>} />
+						element={<NotFound />} />
 				</Routes>
 		</Suspense>
 	);
