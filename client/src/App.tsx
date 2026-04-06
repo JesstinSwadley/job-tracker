@@ -10,10 +10,13 @@ function App() {
 				position="top-right"
 				toastOptions={{
 					duration: 3000,
-					style: {
-						background: '#333',
-						color: '#fff',
+					className: 'antialiased font-semibold text-sm px-6 py-4 shadow-2xl rounded-xl border border-gray-100 bg-white text-gray-800',
+					success: {
+						className: 'border-l-4 border-green-500'
 					},
+					error: {
+						className: 'border-l-4 border-red-500'
+					}
 				}}
 			/>
 

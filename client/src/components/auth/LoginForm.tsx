@@ -21,7 +21,9 @@ const LoginForm = () => {
 
 			localStorage.setItem('token', data.token);
 
-			toast.success(`Welcome back, ${data.username}`);
+			toast.success(`Welcome back, ${data.username}`, {
+				className: 'bg-blue-600 text-white font-bold px-6 py-4 rounded-xl shadow-blue-200 shadow-2xl'
+			});
 			
 			navigate('/dashboard');
 		} catch (err: any) {
