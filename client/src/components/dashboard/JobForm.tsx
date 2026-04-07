@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createJob, updateJob, type Job } from "../../services/jobs";
+import { jobSchema, type JobFormData } from "../../schemas/jobSchema";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 import TextArea from "../ui/TextArea";
@@ -10,87 +11,71 @@ interface JobFormProps {
 	jobToEdit?: Job | null;
 }
 
-const STATUS_OPTIONS = [
-	{ 
-		value: "Applied",
-		label: "Applied" 
-	},
-	{ 
-		value: "Interviewing",
-		label: "Interviewing" 
-	},
-	{ 
-		value: "Offered",
-		label: "Offered"
-	},
-	{ 
-		value: "Rejected",
-		label: "Rejected"
-	},
-];
+const STATUS_OPTIONS = jobSchema.shape.status.options.map(val => ({
+	value: val,
+	label: val
+}));
 
-const LOCATION_OPTIONS = [
-	{ 
-		value: "Remote",
-		label: "Remote"
-	},
-	{ 
-		value: "On-site",
-		label: "On-site"
-	},
-	{ 
-		value: "Hybrid",
-		label: "Hybrid"
-	},
-];
+const LOCATION_OPTIONS = jobSchema.shape.location_type.options.map(val => ({
+	value: val,
+	label: val
+}));
 
 const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof JobFormData, string[]>>>({});
 
 	const isEditMode = !!jobToEdit;
-	const buttonText = isLoading ? "Saving..." : (isEditMode ? "Update Job" : "Add Job");
+	const buttonText = isLoading ? "Saving to Database..." : (isEditMode ? "Update Job" : "Add Job");
 
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setIsLoading(true);
-		setError(null);
+		setFieldErrors({});
 
 		const formData = new FormData(e.currentTarget);
+		const rawData = Object.fromEntries(formData.entries());
 
-		const jobData = {
-			position: formData.get("position") as string,
-			company: formData.get("company") as string,
-			status: formData.get("status") as string,
-			salary: (formData.get("salary") as string) || undefined,
-			job_url: (formData.get("job_url") as string) || undefined,
-			source: (formData.get("source") as string) || undefined,
-			location_type: (formData.get("location_type") as string) || "Remote",
-			notes: (formData.get("notes") as string) || undefined,
-		}
+		// Form Validation
+		const result = jobSchema.safeParse(rawData);
 
-		if (!jobData.position || !jobData.company || !jobData.status) {
-			setError("Position, Company, and Status are required");
+		if (!result.success) {
+			const errors: Partial<Record<keyof JobFormData, string[]>> = {};
+
+			result.error.issues.forEach((issue) => {
+				const fieldName = issue.path[0] as keyof JobFormData;
+
+				if (!errors[fieldName]) {
+					errors[fieldName] = [];
+				}
+
+				errors[fieldName].push(issue.message);
+			});
+
+
+			setFieldErrors(errors);
 			setIsLoading(false);
+
+			toast.error("Please fix the errors in the form");
 			return;
 		}
 
 		try {
+			const validatedData: JobFormData = result.data;
+
 			if (isEditMode && jobToEdit) {
-				await updateJob(jobToEdit.id, jobData);
+				await updateJob(jobToEdit.id, validatedData);
 
-				toast.success(`${jobData.position} at ${jobData.company} has been updated`);
+				toast.success(`${validatedData.position} at ${validatedData.company} has been updated`);
 			} else {
-				await createJob(jobData);
+				await createJob(validatedData);
 
-				toast.success(`${jobData.position} at ${jobData.company} has been created`);
+				toast.success(`${validatedData.position} at ${validatedData.company} has been created`);
 			}
 
 			onSuccess();
 		} catch (err: any) {
-			setError(err.message || "Something went wrong. Please try again.");
-
-			toast.error(err.message || `There was an error with ${jobData.position} at ${jobData.company}`);
+			toast.error(err.message || `The server encountered an error.`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -99,34 +84,48 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 	return (
 		<form
 			className="space-y-4" 
-			onSubmit={handleSubmit}>
-				{error && (
-					<p
-						className="text-sm font-bold text-red-500">
-							{error}
-					</p>
-				)}
-			
+			onSubmit={handleSubmit}>				
 				<div
 					className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<Input
-							label="Position *"
-							id="positionInput"
-							name="position"
-							placeholder="Web Developer"
-							type="text"
-							required
-							defaultValue={jobToEdit?.position}/>
+						<div
+							className="space-y-1">
+								<Input
+									label="Position *"
+									id="positionInput"
+									name="position"
+									placeholder="Web Developer"
+									type="text"
+									defaultValue={jobToEdit?.position}
+									className={fieldErrors.position ? "border-red-500" : ""}/>
 
-						<Input
-							label="Company *"
-							id="companyInput"
-							name="company"
-							placeholder="Test Company LLC"
-							type="text"
-							required
-							defaultValue={jobToEdit?.company}/>
+								{fieldErrors.position && (
+									<p 
+										className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
+											{fieldErrors.position[0]}
+									</p>
+								)}
+						</div>
+
+						<div
+							className="space-y-1">
+								<Input
+									label="Company *"
+									id="companyInput"
+									name="company"
+									placeholder="Test Company LLC"
+									type="text"
+									defaultValue={jobToEdit?.company}
+									className={fieldErrors.company ? "border-red-500" : ""}/>
+
+								{fieldErrors.company && (
+									<p 
+										className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
+											{fieldErrors.company[0]}
+									</p>
+								)}
+						</div>
 				</div>
+			
 
 				<div 
 					className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,7 +133,6 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 							label="Status"
 							id="statusInput"
 							name="status"
-							required
 							options={STATUS_OPTIONS} 
 							defaultValue={jobToEdit?.status || "Applied"}/>
 
@@ -165,13 +163,24 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 							defaultValue={jobToEdit?.source}/>
 				</div>
 
-				<Input
-					label="Job URL"
-					id="urlInput"
-					name="job_url"
-					placeholder="https://company.com/careers/role."
-					type="url"
-					defaultValue={jobToEdit?.job_url}/>
+				<div
+					className="space-y-1">
+						<Input
+							label="Job URL"
+							id="urlInput"
+							name="job_url"
+							placeholder="https://company.com/careers/role."
+							type="text"
+							defaultValue={jobToEdit?.job_url}
+							className={fieldErrors.job_url ? "border-red-500" : ""}/>
+
+						{fieldErrors.job_url && (
+							<p 
+								className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
+									{fieldErrors.job_url[0]}
+							</p>
+						)}
+				</div>
 
 				<TextArea 
 					label="Notes"
@@ -181,14 +190,19 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 					rows={4}
 					defaultValue={jobToEdit?.notes}/>
 
-				<button
-					type="submit"
-					disabled={isLoading}
-					className={`w-full rounded-lg py-3 font-bold text-white transition ${
-						isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700"
-				}`}>
-					{buttonText}
-				</button>
+
+				<div
+					className="pt-2">
+
+					<button
+						type="submit"
+						disabled={isLoading}
+						className={`w-full rounded-lg py-3 font-bold text-white transition ${
+							isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
+					}`}>
+						{buttonText}
+					</button>
+				</div>
 		</form>
 	);
 };
