@@ -12,7 +12,7 @@ export const loginRequest = async (username: string, password: string): Promise<
 			},
 			method: 'POST',
 			body: JSON.stringify({
-				username,
+				username, 
 				password
 			})
 		});
@@ -44,5 +44,5 @@ export const registerRequest = async (username: string, password: string) => {
 		throw new Error(data.error || 'Register failed');
 	}
 
-	return data;
+	return data as AuthResponse;
 }
