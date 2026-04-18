@@ -2,24 +2,46 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { loginRequest } from '../../services/auth';
 import toast from 'react-hot-toast';
+import { loginSchema, type LoginFormData } from '../../schemas/loginSchema';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginFormData, string[]>>>({});
+	
 	const navigate = useNavigate();
+	const { login } = useAuth();
 
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setIsLoading(true);
+		setFieldErrors({});
 
-		const formData: FormData = new FormData(e.currentTarget);
-		const username = formData.get("username") as string;
-		const password = formData.get("password") as string;
+		const formData = new FormData(e.currentTarget);
+		const rawData = Object.fromEntries(formData.entries());
+
+		const result = loginSchema.safeParse(rawData);
+
+		if (!result.success) {
+			const errors: Partial<Record<keyof LoginFormData, string[]>> = {};
+
+			result.error.issues.forEach((issue) => {
+				const key = issue.path[0] as keyof LoginFormData;
+
+				if (!errors[key]) errors[key] = [];
+				
+				errors[key]?.push(issue.message);
+			});
+
+			setFieldErrors(errors);
+			setIsLoading(false);
+			return;
+		}
 
 		try {
-			const data = await loginRequest(username, password);
+			const data = await loginRequest(result.data.username, result.data.password);
 
-			localStorage.setItem('token', data.token);
+			login(data);
 
 			toast.success(`Welcome back, ${data.username}`, {
 				className: 'bg-blue-600 text-white font-bold px-6 py-4 rounded-xl shadow-blue-200 shadow-2xl'
@@ -27,9 +49,12 @@ const LoginForm = () => {
 			
 			navigate('/dashboard');
 		} catch (err: any) {
-			setError(err.message);
+			toast.error(err.message || "Invalid username or password");
 
-			toast.error(err.message || "Login failed");
+			setFieldErrors({
+				username: [],
+				password: []
+			});
 		} finally {
 			setIsLoading(false);
 		}
@@ -44,8 +69,6 @@ const LoginForm = () => {
 						className="space-y-1">
 							<h2 className="text-xl font-bold text-black">Login</h2>
 
-							{error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-
 							<Link
 								className="text-sm font-bold text-gray-300"
 								to="/register">
@@ -53,35 +76,53 @@ const LoginForm = () => {
 							</Link>
 					</div>
 				
-				<div
-					className="space-y-1">
-					<label 
-						className="text-sm font-bold text-black"
-						htmlFor="username">
-							Username
-					</label>
-					<input 
-						type="text" 
-						name="username" 
-						id="username"
-						placeholder='Username'
-						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-				</div>
+					<div
+						className="space-y-1">
+						<label 
+							className="text-sm font-bold text-black"
+							htmlFor="username">
+								Username
+						</label>
+						<input 
+							type="text" 
+							name="username" 
+							id="username"
+							placeholder='Username'
+							className={`w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+								fieldErrors.username ? "border-red-500" : "border-gray-200"
+							}`} />
 
-				<div
-					className="space-y-1">
-					<label 
-						htmlFor="password"
-						className="text-sm font-bold text-black">
-							Password
-					</label>
-					<input 
-						type="password" 
-						name="password" 
-						id="password"
-						placeholder='Password'
-						className="w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-				</div>
+						{fieldErrors.username?.[0] && (
+							<p
+								className="text-xs font-bold text-red-500 transition-opacity duration-300 ease-in opacity-100">
+									{fieldErrors.username[0]}
+							</p>
+						)}
+					</div>
+
+					<div
+						className="space-y-1">
+						<label 
+							htmlFor="password"
+							className="text-sm font-bold text-black">
+								Password
+						</label>
+						<input 
+							type="password" 
+							name="password" 
+							id="password"
+							placeholder='Password'
+							className={`w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+								fieldErrors.password ? "border-red-500" : "border-gray-200"
+							}`} />
+						
+						{fieldErrors.password?.[0] && (
+							<p
+								className="text-xs font-bold text-red-500 transition-opacity duration-300 ease-in opacity-100">
+									{fieldErrors.password[0]}
+							</p>
+						)}
+					</div>
 
 				<div
 					className="flex items-center gap-2">
@@ -110,17 +151,17 @@ const LoginForm = () => {
 
 				<div
 					className="flex justify-between text-sm font-bold text-gray-300">
-					<Link
-						className="hover:underline"
-						to="#">
-							Forgot Username?
-					</Link>
-					
-					<Link
-						className="hover:underline"
-						to="#">
-							Forgot Password?
-					</Link>
+						<Link
+							className="hover:underline hover:text-blue-500 transition"
+							to="#">
+								Forgot Username?
+						</Link>
+						
+						<Link
+							className="hover:underline hover:text-blue-500 transition"
+							to="#">
+								Forgot Password?
+						</Link>
 				</div>
 			</form>
 		</>
