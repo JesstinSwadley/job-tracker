@@ -1,26 +1,38 @@
 # Go React Job Tracker
-A job tracking app that allows users to manage job applications
-
 ## Description
-Managing job applications is chaotic; I built this to centralize the process with a focus on speed and data integrity
+**Managing job applications is chaotic; I built this to centralize the process with a focus on speed, security and data integrity**
+
+This platform isn't just a CRUD app, it's a production-ready app designed to handle authenticated state transitions, secure credential management, and containerized deployment.
 
 ## Installation
-### Quick Start
-Use the containerization tool Docker to package and run the application, Docker can be installed on the docker website [docker](https://www.docker.com/).
+### Prerequisites
+- [Docker](https://www.docker.com/)
 
-Run the following command once you have Docker installed:
+### Quick Start
+1. **Clone the repository:**
+```Bash
+git clone https://github.com/JesstinSwadley/job-tracker.git
+cd job-tracker
+```
+
+2. **Configure Environment Varibles:**
+Create a .env file in the root directory (see Environment Variables below).
+
+3. Spin up the containers:
 ```bash
 docker compose up -d --build
 ```
 
 ## System Architecture 
 ### Tech Stack
-- Nginx: Acts as a reverse proxy, serving static frontend assets and routing /api requests to the backend.
-- PostgreSQL: Persistent data storage for users and job applications, isolated within a private Docker network.
-- Go API: A stateless REST service handling business logic and JWT authentication.
-- React (Vite): A modern frontend library using React Router for client-side navigation and Tailwind CSS for responsive, utility-first styling.
+- **Backend:** [Go](https://go.dev/) (Stateless REST API)
+- **Frontend:** [React 19](https://react.dev/) + [Vite](https://vite.dev/) + [React Router](https://reactrouter.com/)
+- **Validation:** [Zod](https://zod.dev/) (Client-side)
+- **Styling:** [Tailwind CSS 4.x](https://tailwindcss.com/)
+- **Storage:** [PostgreSQL 16](https://www.postgresql.org/)
+- **Infrastructure:** [Nginx](https://nginx.org/), [Docker](https://www.docker.com/), [AWS EC2](https://aws.amazon.com/)
 
-## Usage
+## Configuration
 ### Environment Variables
 Create a .env file in the root directory and populate it with the following:
 | Name        | Type   | Notes                                      |
@@ -34,6 +46,8 @@ Create a .env file in the root directory and populate it with the following:
 ## Roadmap
 - [x] **Phase 1:** Go API & Database Schema
 - [x] **Phase 2:** React Frontend & Auth Integration
-- [x] **Phase 3:** Containerization (Docker) & EC2 Deployment
-- [ ] **Phase 4:** UX Hardening (Toasts, OpenAPI/Swagger, Error Handling)
-- [ ] **Phase 5:** Cloud Scaling (Migrating to AWS RDS & S3/CloudFront)
+- [x] **Phase 3:** Containerization (Docker & Nginx) & EC2 Deployment
+- [x] **Phase 4:** Auth Hardening (Toast Notifications, OpenAPI/Swagger, Zod, JWT, Context)
+- [ ] **Phase 5:** Job Dashboard ("Authenticated Fetch", Job Cards, Vitest Test Suite)
+- [ ] **Phase 6**: Additional Features (Dynamic status tracking & analytics)
+- [ ] **Phase 7:** Production Deployment (CI/CD, AWS EC2/RDS, AWS EC2 ASG, AWS Elasticache, AWS ALB, Route53 DNS)
