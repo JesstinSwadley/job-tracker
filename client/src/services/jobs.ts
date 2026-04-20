@@ -1,3 +1,5 @@
+import { apiClient } from "./apiClient";
+
 export interface Job {
 	id: number;
 	position: string;
@@ -13,78 +15,28 @@ export interface Job {
 	interviewed_at?: string;
 }
 
-export interface CreateJobRequest {
-	position: string;
-	company: string;
-}
-
-const API_BASE = '/api/v1';
-
-const getAuthHeaders = () => {
-	const token = localStorage.getItem('token');
-
-	if (!token) {
-		console.warn("No token found in localStorage");
-	}
-
-	return {
-		'Content-Type': 'application/json',
-		'Authorization': `Bearer ${token}`
-	};
-}
-
-export const fetchJobs = async (): Promise<Job[]> => {
-	const response = await fetch(`${API_BASE}/jobs`, {
-		method: 'GET',
-		headers: getAuthHeaders(),
+export const fetchJobs = (): Promise<Job[]> => {
+	return apiClient<Job[]>('/jobs', {
+		method: 'GET' 
 	});
-
-	if (!response.ok) {
-		throw new Error('Failed to fetch jobs');
-	}
-
-	return response.json();
 }
 
-export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`${API_BASE}/jobs`, {
+export const createJob = (jobData: Partial<Job>): Promise<Job> => {
+	return 	apiClient<Job>('/jobs', {
 		method: 'POST',
-		headers: getAuthHeaders(),
-		body: JSON.stringify(jobData),
+		body: JSON.stringify(jobData)
 	});
-
-	if (!response.ok) {
-		const errorData = await response.json();
-
-		throw new Error(errorData.error || 'Failed to create job');
-	}
-
-	return response.json();
 }
 
-export const deleteJob = async (jobId: number): Promise<void> => {
-	const response = await fetch(`${API_BASE}/jobs/${jobId}`, {
-		method: 'DELETE',
-		headers: getAuthHeaders(),
-	});
-
-	if (!response.ok) {
-		const errorData = await response.json();
-		throw new Error(errorData.error || 'Failed to delete job');
-	}
-}
-
-export const updateJob = async (id: number, jobData: Partial<Job>): Promise<Job> => {
-	const response = await fetch(`${API_BASE}/jobs/${id}`, {
+export const updateJob = (id: number, jobData: Partial<Job>): Promise<Job> => {
+	return 	apiClient<Job>(`/jobs/${id}`, {
 		method: 'PUT',
-		headers: getAuthHeaders(),
-		body: JSON.stringify(jobData),
+		body: JSON.stringify(jobData)
 	});
+}
 
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({}));
-		throw new Error(errorData.error || 'Failed to update job');
-	}
-
-	return response.json();
-};
+export const deleteJob = (jobId: number): Promise<void> => {
+	return apiClient<void>(`/jobs/${jobId}`, {
+		method: 'DELETE'
+	});
+}
