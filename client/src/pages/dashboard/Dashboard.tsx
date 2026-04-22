@@ -98,7 +98,7 @@ const Dashboard = () => {
 								className="text-gray-500">
 									{jobs.length === 0 
 										? "Ready to find your dream job"
-										: `Tracking {jobs.length} active opportunities`
+										: `Tracking ${jobs.length} active opportunities`
 									}
 							</p>
 						</div>
@@ -135,6 +135,7 @@ const Dashboard = () => {
 				onClose={() => setIsModalOpen(false)}
 				title="Track New Application">
 					<JobForm
+						key={selectedJob?.id || 'new'}
 						jobToEdit={selectedJob}
 						onSuccess={() => {
 							loadJobs();

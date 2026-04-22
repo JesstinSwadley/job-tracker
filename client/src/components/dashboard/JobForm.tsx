@@ -5,6 +5,7 @@ import Input from "../ui/Input";
 import Select from "../ui/Select";
 import TextArea from "../ui/TextArea";
 import toast from "react-hot-toast";
+import { ApiError } from "../../services/apiClient";
 
 interface JobFormProps {
 	onSuccess: () => void;
@@ -75,7 +76,11 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 
 			onSuccess();
 		} catch (err: any) {
-			toast.error(err.message || `The server encountered an error.`);
+			if (err instanceof ApiError) {
+				toast.error(err.message);
+			} else {
+				toast.error(err.message || `The server encountered an error.`);
+			}
 		} finally {
 			setIsLoading(false);
 		}
