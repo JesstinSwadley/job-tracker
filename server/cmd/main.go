@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,10 +13,13 @@ import (
 
 	"github.com/JesstinSwadley/job-tracker/api"
 	"github.com/JesstinSwadley/job-tracker/api/handler"
+	"github.com/JesstinSwadley/job-tracker/db"
 	_ "github.com/JesstinSwadley/job-tracker/docs"
 	"github.com/JesstinSwadley/job-tracker/internal/auth"
 	"github.com/JesstinSwadley/job-tracker/internal/database"
 	"github.com/JesstinSwadley/job-tracker/internal/repository"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 	"github.com/rs/cors"
 )
 
@@ -59,6 +63,37 @@ func main() {
 
 			os.Exit(1)
 		}
+	}
+
+	if os.Getenv("AUTO_MIGRATE") != "false" {
+		slog.Info("Running automatic database migrations...")
+
+		dbURL := os.Getenv("DB_URL")
+		migrationDB, err := sql.Open("pgx", dbURL)
+
+		if err != nil {
+			slog.Error("failed to open std sql db for migrations", "error", err)
+
+			os.Exit(1)
+		}
+
+		goose.SetBaseFS(db.MigrationsFS)
+
+		if err := goose.SetDialect("postgres"); err != nil {
+			slog.Error("migration failed", "error", err)
+
+			os.Exit(1)
+		}
+
+		if err := goose.Up(migrationDB, "migrations"); err != nil {
+			slog.Error("goose up failed", "error", err)
+
+			os.Exit(1)
+		}
+
+		migrationDB.Close()
+
+		slog.Info("Migrations complete!")
 	}
 
 	sqlcQueries := repository.New(dbPool)
