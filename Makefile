@@ -3,7 +3,7 @@ BINARY_NAME=go-job-tracker
 IMAGE_API=job-tracker-api
 IMAGE_FE=job-tracker-ui
 TAG=v1
-DB_URL_LOCAL=postgres://devuser:devpassword@localhost:5433/jobtracker?sslmode=disable
+DB_URL_LOCAL=postgres://devuser:devpassword@localhost:5432/jobtracker?sslmode=disable
 
 # --- Docker Compose Controls ---
 .PHONY: up down logs
