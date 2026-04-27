@@ -1,4 +1,4 @@
-import Nav from "./components/Nav";
+import Nav from "./components/layouts/Nav";
 import { BrowserRouter } from "react-router";
 import AppRoutes from "./routes";
 import { Toaster } from "react-hot-toast";
