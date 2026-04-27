@@ -1,13 +1,16 @@
+import { X } from "lucide-react";
 import { useEffect } from "react";
+import { SizeClasses } from "../../libs/constants";
 
 interface ModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	title: string;
 	children: React.ReactNode;
+	size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-const Modal = ({ isOpen, onClose, title, children}: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) => {
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -29,25 +32,29 @@ const Modal = ({ isOpen, onClose, title, children}: ModalProps) => {
 	return (
 		<div
 			onClick={onClose}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
 				<div
 					onClick={(e) => e.stopPropagation()}
-					className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+					className={`w-full ${SizeClasses[size]} rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200`}>
 						<div
 							className="mb-6 flex items-center justify-between">
 								<h2 
-									className="text-xl font-bold text-black">
+									className="text-xl font-bold text-gray-900">
 										{title}
 								</h2>
 
 								<button
 									onClick={onClose}
-									className="text-gray-400 hover:text-black transition">
-										x
+									className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
+										<X
+											size={20}/>
 								</button>
 						</div>
 
-					{children}
+					<div
+						className="max-h-[70vh] overflow-y-auto">
+							{children}
+					</div>
 				</div>
 		</div>
 	);
