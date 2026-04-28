@@ -1,25 +1,33 @@
-import type { TextareaHTMLAttributes } from "react";
+import { forwardRef, type TextareaHTMLAttributes } from "react";
+import FormField from "./FormFieldWrapper";
+import { INPUT_STYLES } from "../../libs/constants";
 
 interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 	label: string;
 	id: string;
+	error?: string;
 }
 
-const TextArea = ({ label, id, className = "", ...props }: TextAreaProps) => {
-	return (
-		<div>
-			<label 
-				className="text-sm font-bold text-black"
-				htmlFor={id}>
-					{label}
-			</label>
-
-			<textarea
+const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
+	({ label, id, error, className = "", ...props }, ref) => {
+		return (
+			<FormField
+				label={label}
 				id={id}
-				className={`w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${className}`}
-				{...props}/>
-		</div>
-	);
-};
+				error={error}>
+					<textarea
+						ref={ref} 
+						id={id}
+						className={`
+							${INPUT_STYLES} min-h-[120px] resize-none 
+							${error ? "border-red-200 bg-red-50" : ""} 
+							${className}`
+						}
+					{...props}/>
+			</FormField>
+		)
+	}
+);
 
+TextArea.displayName = "TextArea";
 export default TextArea;

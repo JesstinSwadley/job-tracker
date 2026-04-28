@@ -1,26 +1,33 @@
-import type { InputHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes } from "react";
+import { INPUT_STYLES } from "../../libs/constants";
+import FormField from "./FormFieldWrapper";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label: string;
 	id: string;
+	error?: string;
 }
 
-const Input = ({ label, id, className = "", ...props }: InputProps) => {
-	return (
-		<div
-			className="space-y-1">
-				<label 
-					className="text-sm font-bold text-black"
-					htmlFor={id}>
-						{label}
-				</label>
+const Input = forwardRef<HTMLInputElement, InputProps>(
+	({ label, id, error, className = "", ...props }, ref) => {
+		return (
+			<FormField
+				label={label}
+				id={id}
+				error={error}>
+					<input 
+						ref={ref}
+						id={id}
+						className={
+							`${INPUT_STYLES} 
+							${error ? 'border-red-200 bg-red-50' : ''} 
+							${className}
+						`}
+						{...props} />
+			</FormField>
+		);
+	}
+);
 
-				<input 
-					id={id}
-					className={`w-full rounded-lg border-2 border-gray-100 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
-					{...props}/>
-		</div>
-	)
-}
-
+Input.displayName = "Input";
 export default Input;
