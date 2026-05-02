@@ -6,28 +6,19 @@ import Select from "../ui/Select";
 import TextArea from "../ui/TextArea";
 import toast from "react-hot-toast";
 import { ApiError } from "../../services/apiClient";
+import { LOCATION_OPTIONS, STATUS_OPTIONS } from "../../libs/constants";
+import Button from "../ui/Button";
 
 interface JobFormProps {
 	onSuccess: () => void;
 	jobToEdit?: Job | null;
 }
 
-const STATUS_OPTIONS = jobSchema.shape.status.options.map(val => ({
-	value: val,
-	label: val
-}));
-
-const LOCATION_OPTIONS = jobSchema.shape.location_type.options.map(val => ({
-	value: val,
-	label: val
-}));
-
 const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof JobFormData, string[]>>>({});
 
 	const isEditMode = !!jobToEdit;
-	const buttonText = isLoading ? "Saving to Database..." : (isEditMode ? "Update Job" : "Add Job");
 
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -92,43 +83,21 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 			onSubmit={handleSubmit}>				
 				<div
 					className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div
-							className="space-y-1">
-								<Input
-									label="Position *"
-									id="positionInput"
-									name="position"
-									placeholder="Web Developer"
-									type="text"
-									defaultValue={jobToEdit?.position}
-									className={fieldErrors.position ? "border-red-500" : ""}/>
+						<Input
+							label="Position *"
+							id="position"
+							name="position" 
+							placeholder="Web Developer"
+							defaultValue={jobToEdit?.position}
+							error={fieldErrors.position?.[0]} />
 
-								{fieldErrors.position && (
-									<p 
-										className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
-											{fieldErrors.position[0]}
-									</p>
-								)}
-						</div>
-
-						<div
-							className="space-y-1">
-								<Input
-									label="Company *"
-									id="companyInput"
-									name="company"
-									placeholder="Test Company LLC"
-									type="text"
-									defaultValue={jobToEdit?.company}
-									className={fieldErrors.company ? "border-red-500" : ""}/>
-
-								{fieldErrors.company && (
-									<p 
-										className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
-											{fieldErrors.company[0]}
-									</p>
-								)}
-						</div>
+						<Input 
+							label="Company *"
+							id="company"
+							name="company"
+							placeholder="Test Company LLC."
+							defaultValue={jobToEdit?.company}
+							error={fieldErrors.company?.[0]}/>
 				</div>
 			
 
@@ -136,14 +105,14 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 					className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<Select
 							label="Status"
-							id="statusInput"
+							id="status"
 							name="status"
 							options={STATUS_OPTIONS} 
 							defaultValue={jobToEdit?.status || "Applied"}/>
 
 						<Select
 							label="Location"
-							id="locationTypeInput"
+							id="location_type"
 							name="location_type"
 							options={LOCATION_OPTIONS}
 							defaultValue={jobToEdit?.location_type || "Remote"}/>
@@ -153,7 +122,7 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 					className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<Input
 							label="Salary"
-							id="salaryInput"
+							id="salary"
 							name="salary"
 							placeholder="$100,000"
 							type="text"
@@ -161,35 +130,25 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 
 						<Input
 							label="Source"
-							id="sourceInput"
+							id="source"
 							name="source"
 							placeholder="LinkedIn, Google, Indeed, etc."
 							type="text"
 							defaultValue={jobToEdit?.source}/>
 				</div>
 
-				<div
-					className="space-y-1">
-						<Input
-							label="Job URL"
-							id="urlInput"
-							name="job_url"
-							placeholder="https://company.com/careers/role."
-							type="text"
-							defaultValue={jobToEdit?.job_url}
-							className={fieldErrors.job_url ? "border-red-500" : ""}/>
-
-						{fieldErrors.job_url && (
-							<p 
-								className="text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
-									{fieldErrors.job_url[0]}
-							</p>
-						)}
-				</div>
+				<Input 
+					label="Job URL"
+					id="job_url"
+					name="job_url"
+					placeholder="https://company.com/careers/role"
+					defaultValue={jobToEdit?.job_url}
+					error={fieldErrors.job_url?.[0]}
+				/>
 
 				<TextArea 
 					label="Notes"
-					id="notesInput"
+					id="notes"
 					name="notes"
 					placeholder="Recruiter contacted me on LinkedIn, second interview next week..."
 					rows={4}
@@ -199,14 +158,12 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 				<div
 					className="pt-2">
 
-					<button
+					<Button
 						type="submit"
-						disabled={isLoading}
-						className={`w-full rounded-lg py-3 font-bold text-white transition ${
-							isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
-					}`}>
-						{buttonText}
-					</button>
+						isLoading={isLoading}
+						className="w-full" >
+							{isEditMode ? "Update Job" : "Add Job"}
+					</Button>
 				</div>
 		</form>
 	);
