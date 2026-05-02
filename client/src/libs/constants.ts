@@ -1,3 +1,5 @@
+import { jobSchema } from "../schemas/jobSchema";
+
 /**
  * Modal & Layout Sizes 
  */
@@ -31,4 +33,18 @@ export const BUTTON_SIZES = {
 	md: "px-6 py-3 text-sm",
 	lg: "px-8 py-4 text-lg",
 }
+
+/**
+ * Job Field Options
+ */
+
+export const STATUS_OPTIONS = jobSchema.shape.status.options.map(val => ({
+	value: val,
+	label: val
+}));
+
+export const LOCATION_OPTIONS = jobSchema.shape.location_type.options.map(val => ({
+	value: val,
+	label: val
+}));
 
