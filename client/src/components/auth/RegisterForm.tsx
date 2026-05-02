@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { registerRequest } from '../../services/auth';
 import { registerSchema, type RegisterFormData } from '../../schemas/registerSchema';
 import Input from '../ui/Input';
+import Button from '../ui/Button';
 
 
 const RegisterForm = () => {
@@ -117,9 +118,16 @@ const RegisterForm = () => {
 						}`}>
 							{isLoading ? "Creating Account..." : "Register"}
 					</button>
+
+					<Button
+						type="submit"
+						isLoading={isLoading}
+						className="w-40">
+							Register
+					</Button>
 			</form>
 		</>
-	)
+	);
 }
 
-export default RegisterForm
+export default RegisterForm;
