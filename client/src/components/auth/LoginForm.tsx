@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { loginSchema, type LoginFormData } from '../../schemas/loginSchema';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../ui/Input';
+import Button from '../ui/Button';
 
 const LoginForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
@@ -112,14 +113,12 @@ const LoginForm = () => {
 							</label>
 					</div>
 
-					<button
+					<Button
 						type="submit"
-						disabled={isLoading}
-						className={`w-40 rounded-lg py-3 text-lg font-bold text-white transition cursor-pointer ${
-							isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
-						}`}>
-							{isLoading ? "Signing in..." : "Login"}
-					</button>
+						isLoading={isLoading}
+						className="w-40">
+							Login
+					</Button>
 
 					<div
 						className="flex justify-between text-sm font-bold text-gray-300">
@@ -136,7 +135,7 @@ const LoginForm = () => {
 					</div>
 			</form>
 		</>
-	)
+	);
 }
 
-export default LoginForm
+export default LoginForm;
