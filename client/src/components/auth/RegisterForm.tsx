@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { registerRequest } from '../../services/auth';
 import { registerSchema, type RegisterFormData } from '../../schemas/registerSchema';
+import Input from '../ui/Input';
 
 
 const RegisterForm = () => {
@@ -67,107 +68,54 @@ const RegisterForm = () => {
 
 	return (
 		<>
-			<form 
-				onSubmit={handleSubmit}
+			<form
+				onSubmit={handleSubmit} 
 				className="space-y-6">
 					<div
 						className="space-y-1">
-							<h2 
+							<h2
 								className="text-xl font-bold text-black">
 									Register
 							</h2>
-
+							
 							<Link
-								className="text-sm font-bold text-gray-300"
-								to="/login">
+								to="/login"
+								className="text-sm font-bold text-gray-300">
 									Already have an account? Login Here
 							</Link>
 					</div>
 
-					<div
-						className="space-y-1">
-						<label 
-							className="text-sm font-bold text-black"
-							htmlFor="username">
-								Username
-						</label>
-						<input
-							type="text" 
-							name="username" 
-							id="username"
-							placeholder='Username'
-							className={`w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-								fieldErrors.username ? "border-red-500" : "border-gray-200"
-							}`} 
-						/>
+					<Input
+						type="text"
+						label="Username"
+						id="username"
+						name="username"
+						placeholder="Username"
+						error={fieldErrors.username?.[0]} />
 
-						{fieldErrors.username && (
-							<p
-								className="text-xs font-bold text-red-500 transition-opacity duration-300 ease-in opacity-100">
-									{fieldErrors.username[0]}
-							</p>
-						)}
-					</div>
+					<Input
+						type="password"
+						label="Password"
+						id="password"
+						name="password"
+						placeholder="Password"
+						error={fieldErrors.password?.[0]} />
 
-					<div
-						className="space-y-1">
-						<label 
-							htmlFor="password"
-							title="Must be at least 8 characters"
-							className="text-sm font-bold text-black">
-								Password
-						</label>
-						<input 
-							type="password" 
-							name="password" 
-							id="password"
-							placeholder='Password'
-							className={`w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-								fieldErrors.password ? "border-red-500" : "border-gray-200"
-							}`} 
-						/>
-
-						{fieldErrors.password?.[0] && (
-							<p
-								className="text-xs font-bold text-red-500 transition-opacity duration-300 ease-in opacity-100">
-									{fieldErrors.password[0]}
-							</p>
-						)}
-					</div>
-
-					<div
-						className="space-y-1">
-						<label 
-							htmlFor="confirmPassword"
-							className="text-sm font-bold text-black">
-								Confirm Password
-						</label>
-						<input 
-							type="password" 
-							name="confirmPassword" 
-							id="confirmPassword"
-							placeholder='Confirm Password'
-							className={`w-full rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-								fieldErrors.confirmPassword ? "border-red-500" : "border-gray-200"
-							}`} 
-						/>
-
-						{fieldErrors.confirmPassword?.[0] && (
-							<p
-								className="text-xs font-bold text-red-500 transition-opacity duration-300 ease-in opacity-100">
-									{fieldErrors.confirmPassword[0]}
-							</p>
-						)}
-					</div>
+					<Input
+						type="password"
+						label="Confirm Password"
+						id="confirmPassword"
+						name="confirmPassword"
+						placeholder="Confirm Password"
+						error={fieldErrors.confirmPassword?.[0]} />
 
 					<button
 						type="submit"
 						disabled={isLoading}
 						className={`w-40 rounded-lg py-3 text-lg font-bold text-white transition cursor-pointer ${
 							isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
-						}`}
-					>
-						{isLoading ? "Creating Account..." : "Register"}
+						}`}>
+							{isLoading ? "Creating Account..." : "Register"}
 					</button>
 			</form>
 		</>
