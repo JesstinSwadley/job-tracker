@@ -8,7 +8,7 @@ export const MODAL_SIZES = {
 	md: 'max-w-md',
 	lg: 'max-w-lg',
 	xl: 'max-w-2xl'
-};
+} as const;
 
 /**
 * Form Styles
@@ -26,13 +26,13 @@ export const BUTTON_VARIANTS = {
 	secondary: "bg-gray-100 hover:bg-gray-200 text-gray-800",
 	danger: "bg-red-500 hover:bg-red-600 text-white",
 	ghost: "bg-transparent hover:bg-gray-100 text-gray-600 shadow-none",
-}
+} as const;
 
 export const BUTTON_SIZES = {
 	sm: "px-3 py-1 text-xs",
 	md: "px-6 py-3 text-sm",
 	lg: "px-8 py-4 text-lg",
-}
+} as const;
 
 /**
  * Job Field Options
@@ -48,3 +48,13 @@ export const LOCATION_OPTIONS = jobSchema.shape.location_type.options.map(val =>
 	label: val
 }));
 
+/**
+ * Job Card Styles
+ */
+export const STATUS_STYLES = {
+	Applied: "bg-blue-100 text-blue-700 border-blue-200",
+	Interviewing: "bg-yellow-100 text-yellow-700 border-yellow-200",
+	Offered: "bg-green-100 text-green-700 border-green-200",
+	Rejected: "bg-red-100 text-red-700 border-red-200",
+	Default: "bg-stone-100 text-stone-700 border-stone-200"
+} as const;
