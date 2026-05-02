@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router"
 import { useAuth } from "../../context/AuthContext";
+import { LogOut, User } from "lucide-react";
+import Button from "../ui/Button";
 
 const Nav = () => {
 	const navigate = useNavigate();
@@ -13,23 +15,15 @@ const Nav = () => {
 
 	return (
 		<nav 
-			className="flex flex-row h-24 justify-between items-center bg-stone-100 px-12 border-b border-stone-200">
-				<div 
-					className="flex items-center gap-2">
+			className="flex flex-row h-24 justify-between items-center bg-stone-100 border-b border-stone-200 px-8 md:px-12">
+				<Link
+					to={isAuthenticated ? "/dahsboard" : "/"}
+					className="flex items-center gap-2 transition hover:opacity-80">
 						<span
-							className="text-xl font-black text-blue-600 tracking-tighter">
+							className="text-xl font-black tracking-tighter text-blue-600">
 								JOBTRACKER
 						</span>
-				</div>
-
-				<div
-					className="flex items-center gap-2">
-						<Link
-							to="/"
-							className="text-xl font-black text-blue-600 tracking-tighter hover:opacity-80 transition">
-								JOBTRACKER
-						</Link>
-				</div>
+				</Link>
 
 				<div 
 					className="flex items-center gap-6">
@@ -42,17 +36,28 @@ const Nav = () => {
 												className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
 													Singed in as
 											</span>
-											<span
-												className="text-sm font-bold text-black">
-													{user?.username}
-											</span>
+											<div
+												className="flex items-center gap-2">
+												<span
+													className="text-sm font-bold text-black">
+														{user?.username}
+												</span>
+
+												<User
+													size={14}
+													className="text-stone-400" />
+											</div>
 									</div>
 
-									<button
+
+									<Button
+										variant="danger"
+										size="sm"
+										icon={LogOut}
 										onClick={handleLogout}
-										className="px-6 py-2 bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-100 transition hover:bg-red-600 active:scale-95 cursor-pointer">
+										className="h-10">
 											Logout
-									</button>
+									</Button>
 							</div>
 						) : (
 							<div
@@ -63,16 +68,17 @@ const Nav = () => {
 											Register
 									</Link>
 
-									<Link
-										to="/login"
-										className="px-6 py-2 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-100 transition hover:bg-blue-700 active:scale-95">
-											Login
-									</Link>
+								<Button
+									onClick={() => navigate('/login')}
+									size="sm"
+									className="h-10">
+										Login
+								</Button>
 							</div>
 						)}
 				</div>
 		</nav>
-	)
+	);
 }
 
-export default Nav
+export default Nav;
