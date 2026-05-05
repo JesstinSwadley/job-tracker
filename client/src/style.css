@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+@theme {
+	/* BRAND COLORS */
+	--color-brand: #2563eb;
+	--color-brand-hover: #1d4ed8;
+
+	/* LIGHT MODE DEFAULTS */
+	--color-ui-bg: #f8fafc; /* slate-50 */
+	--color-ui-card: #ffffff; /* white */
+	--color-ui-text: #0f172a; /* slate-900 */
+	--color-ui-border: #e2e8f0; /* slate-200 */
+	--color-ui-muted: #64748b; /* slate-500 */
+
+	/* SCREEN BREAKPOINTS */
+	--breakpoint-tablet: 640px;
+	--breakpoint-desktop: 1024px;
+
+	/* DESIGN */
+	--radius-brand: 0.75rem;
+}
+
+/* DARK MODE OVERRIDES */
+@layer base {
+	.dark {
+		--color-ui-bg: #020617; /* slate-950 */
+		--color-ui-card: #0f172a; /* slate-900 */
+		--color-ui-text: #f8fafc; /* slate-50 */
+		--color-ui-border: #1e293b; /* slate-800 */
+		--color-ui-muted: #94a3b8; /* slate-400 */
+	}
+
+	/* GLOBAL BASELINE STYLES */
+	body {
+		@apply bg-ui-bg text-ui-text antialiased transition-colors duration-200;
+	}
+}
