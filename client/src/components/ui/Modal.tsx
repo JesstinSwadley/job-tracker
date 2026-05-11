@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { MODAL_SIZES } from "../../libs/constants";
+import { cn } from "../../libs/utils";
 
 interface ModalProps {
 	isOpen: boolean;
@@ -35,24 +36,30 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) =>
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
 				<div
 					onClick={(e) => e.stopPropagation()}
-					className={`w-full ${MODAL_SIZES[size]} rounded-2xl bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-200`}>
+					className={
+						cn(
+							"w-full bg-ui-card p-6 md:p-8 shadow-2xl animate-in zoom-in-95 duration-200",
+							"rounded-brand border border-ui-border",
+							MODAL_SIZES[size]
+						)
+					}>
 						<div
 							className="mb-6 flex items-center justify-between">
 								<h2 
-									className="text-xl font-bold text-gray-900">
+									className="text-xl font-bold text-ui-text">
 										{title}
 								</h2>
 
 								<button
 									onClick={onClose}
-									className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
+									className="p-1 rounded-full text-ui-muted hover:text-ui-text hover:bg-ui-bg transition-all focus:ring-2 focus:ring-brand outline-none">
 										<X
 											size={20}/>
 								</button>
 						</div>
 
 					<div
-						className="max-h-[70vh] overflow-y-auto">
+						className="max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-ui-border">
 							{children}
 					</div>
 				</div>

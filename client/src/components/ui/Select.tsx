@@ -2,6 +2,7 @@ import { forwardRef, type SelectHTMLAttributes } from "react";
 import FormField from "./FormFieldWrapper";
 import { INPUT_STYLES } from "../../libs/constants";
 import { ChevronDown } from "lucide-react";
+import { cn } from "../../libs/utils";
 
 interface Option {
 	value: string;
@@ -27,23 +28,31 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 							<select
 								ref={ref}
 								id={id}
-								className={`
-									${INPUT_STYLES} appearance-none cursor-pointer 
-									${error ? "border-red-200 bg-red-50" : ""} 
-									${className}`
+								// className={`
+								// 	${INPUT_STYLES} appearance-none cursor-pointer 
+								// 	${error ? "border-red-200 bg-red-50" : ""} 
+								// 	${className}`
+								// }
+								className={
+									cn(
+										INPUT_STYLES,
+										error && "border-red-500/50 bg-red-500/5 focus:ring-red-500/20",
+										className
+									)
 								}
 								{...props}>
 									{options.map((opt) => (
 										<option
 											key={opt.value}
-											value={opt.value}>
+											value={opt.value}
+											className="bg-ui-card text-ui-text">
 												{opt.label}
 										</option>
 									))}
 							</select>
 
 							<div
-								className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+								className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-ui-muted">
 									<ChevronDown
 										size={18}
 										strokeWidth={3} />

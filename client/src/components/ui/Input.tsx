@@ -1,6 +1,7 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import { INPUT_STYLES } from "../../libs/constants";
 import FormField from "./FormFieldWrapper";
+import { cn } from "../../libs/utils";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label: string;
@@ -19,10 +20,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 						ref={ref}
 						id={id}
 						className={
-							`${INPUT_STYLES} 
-							${error ? 'border-red-200 bg-red-50' : ''} 
-							${className}
-						`}
+							cn(
+								INPUT_STYLES,
+								error && "border-red-500/50 bg-red-500/5 focus:ring-red-500/20",
+								className
+							)
+						}
 						{...props} />
 			</FormField>
 		);
