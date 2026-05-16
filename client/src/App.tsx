@@ -12,12 +12,12 @@ function App() {
 					position="top-right"
 					toastOptions={{
 						duration: 3000,
-						className: 'antialiased font-semibold text-sm px-6 py-4 shadow-2xl rounded-xl border border-gray-100 bg-white text-gray-800',
+						className: 'antialiased font-semibold text-sm px-6 py-4 shadow-2xl rounded-brand border border-ui-brand bg-ui-card text-ui-text',
 						success: {
-							className: 'border-l-4 border-green-500'
+							className: 'border-l-4 border-emerald-500 bg-ui-card'
 						},
 						error: {
-							className: 'border-l-4 border-red-500'
+							className: 'border-l-4 border-red-500 bg-ui-card'
 						}
 					}}
 				/>
@@ -25,9 +25,13 @@ function App() {
 				<BrowserRouter>
 					<Nav />
 
-					<main>
-						<AppRoutes />
-					</main>
+					<div
+						className="min-h-screen flex flex-col bg-ui-bg transition-colors duration-300">
+							<main
+								className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+									<AppRoutes />
+							</main>
+					</div>
 				</BrowserRouter>
 			</AuthProvider>
 		</>
