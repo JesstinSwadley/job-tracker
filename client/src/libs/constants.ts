@@ -13,7 +13,7 @@ export const MODAL_SIZES = {
 /**
 * Form Styles
 */
-export const INPUT_STYLES = "w-full rounded-brand border-2 border-ui-border bg-ui-bg px-4 py-3 text-sm text-ui-text placeholder:text-ui-muted focus:outline-none focus:ring-brand transition-all";
+export const INPUT_STYLES = "w-full rounded-brand border-2 border-ui-border bg-ui-bg px-4 py-3 text-sm text-ui-text placeholder:text-ui-muted focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all";
 
 /**
  * Button Sytles

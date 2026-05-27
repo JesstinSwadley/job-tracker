@@ -27,10 +27,11 @@ const FormField = ({ label, id, error, children, className }: FormFieldProps) =>
 
 					{
 						error && 
-						<span
+						<p
+							role="alert"
 							className="text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
 								{error}
-						</span>
+						</p>
 					}
 			</div>
 	)

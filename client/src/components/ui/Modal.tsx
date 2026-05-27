@@ -33,6 +33,7 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) =>
 	return (
 		<div
 			onClick={onClose}
+			role="dialog"
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
 				<div
 					onClick={(e) => e.stopPropagation()}
@@ -46,6 +47,7 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) =>
 						<div
 							className="mb-6 flex items-center justify-between">
 								<h2 
+									id="modal-title"
 									className="text-xl font-bold text-ui-text">
 										{title}
 								</h2>

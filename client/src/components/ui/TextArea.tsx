@@ -19,15 +19,10 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 					<textarea
 						ref={ref} 
 						id={id}
-						// className={`
-						// 	${INPUT_STYLES} min-h-[120px] resize-none 
-						// 	${error ? "border-red-200 bg-red-50" : ""} 
-						// 	${className}`
-						// }
 						className={
 							cn(
 								INPUT_STYLES,
-								"min-h-[120px] resize-none",
+								"resize-y",
 								error && "border-red-500/50 bg-red-500/5",
 								className
 							)

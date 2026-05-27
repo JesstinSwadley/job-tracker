@@ -30,7 +30,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 						<Loader2
 							className="h-4 w-4 animate-spin shrink-0" />
 					) : (
-						Icon && <Icon size={18} strokeWidth={2.5} />
+						Icon && <Icon 
+								size={18} 
+								strokeWidth={2.5}
+								className="shrink-0" />
 					)}
 
 					<span>

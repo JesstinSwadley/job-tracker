@@ -28,14 +28,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 							<select
 								ref={ref}
 								id={id}
-								// className={`
-								// 	${INPUT_STYLES} appearance-none cursor-pointer 
-								// 	${error ? "border-red-200 bg-red-50" : ""} 
-								// 	${className}`
-								// }
 								className={
 									cn(
 										INPUT_STYLES,
+										"appearance-none pr-10 cursor-pointer",
 										error && "border-red-500/50 bg-red-500/5 focus:ring-red-500/20",
 										className
 									)
