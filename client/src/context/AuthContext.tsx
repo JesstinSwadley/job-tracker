@@ -18,6 +18,12 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
+	const logout = () => {
+		localStorage.removeItem("token");
+		localStorage.removeItem("username");
+		setUser(null);
+	};
+
 	useEffect(() => {
 		const initializeAuth = () => {
 			try {
@@ -29,13 +35,27 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 				}
 			} catch (err) {
 				console.error("Auth initialization failed:", err);
-				localStorage.clear();
+				
+				localStorage.removeItem("token");
+				localStorage.removeItem("username");
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		initializeAuth();
+
+		const handleStorageChange = (e: StorageEvent) => {
+			if (e.key === "token" && !e.newValue) {
+				setUser(null);
+			}
+		};
+
+		window.addEventListener("storage", handleStorageChange);
+
+		return () => {
+			window.removeEventListener("storage", handleStorageChange);
+		}
 	}, []);
 
 	const login = (data: { token: string; username: string }) => {
@@ -43,12 +63,6 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 		localStorage.setItem("username", data.username);
 
 		setUser({ username: data.username });
-	};
-
-	const logout = () => {
-		localStorage.removeItem("token");
-		localStorage.removeItem("username");
-		setUser(null);
 	};
 
 	return (

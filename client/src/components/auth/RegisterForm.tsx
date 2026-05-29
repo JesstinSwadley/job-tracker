@@ -40,6 +40,7 @@ const RegisterForm = () => {
 
 			setFieldErrors(errors);
 			setIsLoading(false);
+
 			toast.error("Please fix the registration errors.");
 			return;
 		}
@@ -49,9 +50,7 @@ const RegisterForm = () => {
 
 			login({ token: data.token, username: data.username});
 
-			toast.success(`Welcome, ${data.username}`, {
-				className: 'bg-blue-600 text-white font-bold px-6 py-4 rounded-xl shadow-blue-200 shadow-2xl'
-			});
+			toast.success(`Welcome to JobTracker, ${data.username}`);
 
 			navigate('/dashboard');
 		} catch (err: any) {
@@ -75,14 +74,19 @@ const RegisterForm = () => {
 					<div
 						className="space-y-1">
 							<h2
-								className="text-xl font-bold text-black">
+								className="text-2xl font-black text-ui-text tracking-tight uppercase">
 									Register
 							</h2>
 							
 							<Link
 								to="/login"
 								className="text-sm font-bold text-gray-300">
-									Already have an account? Login Here
+									Already have an account?
+
+									<span 
+										className="text-brand underline">
+											Login Here
+									</span>
 							</Link>
 					</div>
 
@@ -110,19 +114,10 @@ const RegisterForm = () => {
 						placeholder="Confirm Password"
 						error={fieldErrors.confirmPassword?.[0]} />
 
-					<button
-						type="submit"
-						disabled={isLoading}
-						className={`w-40 rounded-lg py-3 text-lg font-bold text-white transition cursor-pointer ${
-							isLoading ? "bg-gray-400 cursor-wait" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
-						}`}>
-							{isLoading ? "Creating Account..." : "Register"}
-					</button>
-
 					<Button
 						type="submit"
 						isLoading={isLoading}
-						className="w-40">
+						className="w-full md:w-40">
 							Register
 					</Button>
 			</form>

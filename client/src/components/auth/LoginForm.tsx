@@ -45,9 +45,7 @@ const LoginForm = () => {
 
 			login(data);
 
-			toast.success(`Welcome back, ${data.username}`, {
-				className: 'bg-blue-600 text-white font-bold px-6 py-4 rounded-xl shadow-blue-200 shadow-2xl'
-			});
+			toast.success(`Welcome back, ${data.username}`);
 			
 			navigate('/dashboard');
 		} catch (err: any) {
@@ -71,13 +69,13 @@ const LoginForm = () => {
 					<div
 						className="space-y-1">
 							<h2
-								className="text-xl font-bold text-black">
+								className="text-2xl font-black text-ui-text tracking-tight uppercase">
 									Login
 							</h2>
 							
 							<Link
 								to="/register"
-								className="text-sm font-bold text-gray-300">
+								className="text-sm font-bold text-ui-muted hover:text-brand transition-colors">
 									Need to register an account? Create an account
 							</Link>
 					</div>
@@ -104,11 +102,11 @@ const LoginForm = () => {
 								type="checkbox"
 								name="remember"
 								id="remember"
-								className="h-5 w-5 rounded border-gray-200 cursor-pointer" />
+								className="h-5 w-5 rounded border-ui-border bg-ui-bg text-brand focus:ring-brand cursor-pointer transition-all" />
 
 							<label 
 								htmlFor="remember"
-								className="text-sm font-bold text-black cursor-pointer">
+								className="text-sm font-bold text-ui-text cursor-pointer select-none">
 									Keep me logged in?
 							</label>
 					</div>
@@ -116,20 +114,20 @@ const LoginForm = () => {
 					<Button
 						type="submit"
 						isLoading={isLoading}
-						className="w-40">
+						className="w-full md:w-40">
 							Login
 					</Button>
 
 					<div
-						className="flex justify-between text-sm font-bold text-gray-300">
+						className="flex flex-col sm:flex-row justify-between gap-2 text-sm font-bold text-ui-muted">
 							<Link
 								to="#"
-								className="hover:underline hover:text-blue-500 transition">
+								className="hover:text-brand transition-colors">
 									Forgot Username?
 							</Link>
 							<Link
 								to="#"
-								className="hover:underline hover:text-blue-500 transition">
+								className="hover:text-brand transition-colors text-right">
 									Forgot Password?
 							</Link>
 					</div>
