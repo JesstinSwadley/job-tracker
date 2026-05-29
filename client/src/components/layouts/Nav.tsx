@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router"
 import { useAuth } from "../../context/AuthContext";
 import { LogOut, User } from "lucide-react";
 import Button from "../ui/Button";
+import ThemeToggle from "../ui/ThemeToggle";
 
 const Nav = () => {
 	const navigate = useNavigate();
@@ -27,6 +28,8 @@ const Nav = () => {
 
 				<div 
 					className="flex items-center gap-4 md:gap-6">
+						<ThemeToggle />
+
 						{isAuthenticated ? (
 							<div
 								className="flex items-center gap-4 md:gap-6">
@@ -55,8 +58,12 @@ const Nav = () => {
 										size="sm"
 										icon={LogOut}
 										onClick={handleLogout}
-										className="h-9 md:h-10">
-											Logout
+										className="h-9 md:h-10 px-3 md:px-6">
+											
+											<span
+												className="hidden md:inline">
+													Logout
+											</span>
 									</Button>
 							</div>
 						) : (
