@@ -37,17 +37,17 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 
 	return (
 		<div 
-			className="group relative flex flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
+			className="group relative flex flex-col rounded-xl border border-ui-border bg-ui-card p-6 shadow-sm transition-all hover:border-brand/50 hover:shadow-md">
 				<div 
 					className="flex items-start justify-between mb-4">
 						<div
 							className="max-w-[70%]">
 								<h3 
-									className="text-lg font-bold text-gray-900 leading-tight truncate">
+									className="text-lg font-bold text-ui-text leading-tight truncate">
 										{job.position}
 								</h3>
 								<p 
-									className="text-sm font-semibold text-blue-600 truncate">
+									className="text-sm font-semibold text-brand truncate">
 										{job.company}
 								</p>
 						</div>
@@ -98,14 +98,14 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 				</div>
 
 				<div 
-					className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
+					className="mt-auto flex items-center justify-between border-t border-ui-border pt-4">
 					<div>
 						{job.job_url && (
 							<a 
 								href={job.job_url}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors">
+								className="flex items-center gap-1 text-xs font-bold text-ui-muted hover:text-brand transition-colors">
 								<ExternalLink 
 									size={14} />
 								View Posting
@@ -114,13 +114,13 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 					</div>
 
 					<div 
-						className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+						className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
 							<Button
 								variant="ghost"
 								size="sm"
 								icon={Pencil}
 								onClick={onEditClick}
-								className="text-gray-500 hover:text-blue-600">
+								className="text-ui-muted hover:text-brand hover:bg-ui-bg">
 									Edit
 							</Button>
 
@@ -129,7 +129,7 @@ const JobCard = ({ job, onEditClick, onDeleteSuccess }: JobCardProps) => {
 								size="sm"
 								icon={Trash2}
 								onClick={handleDelete}
-								className="text-gray-500 hover:text-red-600">
+								className="text-ui-muted hover:text-red-500 hover:bg-red-500/5">
 									Delete
 							</Button>
 					</div>

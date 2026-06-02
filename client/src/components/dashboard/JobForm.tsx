@@ -108,14 +108,16 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 							id="status"
 							name="status"
 							options={STATUS_OPTIONS} 
-							defaultValue={jobToEdit?.status || "Applied"}/>
+							error={fieldErrors.status?.[0]}
+							defaultValue={jobToEdit?.status || "Applied"} />
 
 						<Select
 							label="Location"
 							id="location_type"
 							name="location_type"
 							options={LOCATION_OPTIONS}
-							defaultValue={jobToEdit?.location_type || "Remote"}/>
+							error={fieldErrors.location_type?.[0]}
+							defaultValue={jobToEdit?.location_type || "Remote"} />
 				</div>
 
 				<div 
@@ -126,7 +128,8 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 							name="salary"
 							placeholder="$100,000"
 							type="text"
-							defaultValue={jobToEdit?.salary}/>
+							error={fieldErrors.salary?.[0]}
+							defaultValue={jobToEdit?.salary} />
 
 						<Input
 							label="Source"
@@ -134,7 +137,8 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 							name="source"
 							placeholder="LinkedIn, Google, Indeed, etc."
 							type="text"
-							defaultValue={jobToEdit?.source}/>
+							error={fieldErrors.source?.[0]}
+							defaultValue={jobToEdit?.source} />
 				</div>
 
 				<Input 
@@ -143,8 +147,7 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 					name="job_url"
 					placeholder="https://company.com/careers/role"
 					defaultValue={jobToEdit?.job_url}
-					error={fieldErrors.job_url?.[0]}
-				/>
+					error={fieldErrors.job_url?.[0]} />
 
 				<TextArea 
 					label="Notes"
@@ -152,7 +155,8 @@ const JobForm = ({ onSuccess, jobToEdit }: JobFormProps) => {
 					name="notes"
 					placeholder="Recruiter contacted me on LinkedIn, second interview next week..."
 					rows={4}
-					defaultValue={jobToEdit?.notes}/>
+					error={fieldErrors.notes?.[0]}
+					defaultValue={jobToEdit?.notes} />
 
 
 				<div

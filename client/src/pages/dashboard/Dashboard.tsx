@@ -5,6 +5,7 @@ import Modal from "../../components/ui/Modal";
 import JobForm from "../../components/dashboard/JobForm";
 import { ApiError } from "../../services/apiClient";
 import toast from "react-hot-toast";
+import Button from "../../components/ui/Button";
 
 
 const Dashboard = () => {
@@ -55,9 +56,9 @@ const Dashboard = () => {
 	if (isLoading) {
 		return (
 			<div
-				className="flex h-[60vh] items-center justify-center">
+				className="flex h-[60vh] items-center justify-center bg-ui-bg">
 					<div 
-						className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-blue-600">
+						className="h-12 w-12 animate-spin rounded-full border-4 border-brand border-t-transparent shadow-xl shadow-brand/10">
 					</div>
 			</div>
 		)
@@ -68,16 +69,16 @@ const Dashboard = () => {
 			<div
 				className="mx-auto max-w-md py-20 text-center">
 					<h2
-						className="text-xl font-bold text-stone-900">
+						className="text-xl font-black text-ui-text uppercase tracking-tight">
 							Unable to load jobs
 					</h2>
 					<p
-						className="mt-2 text-stone-500">
+						className="mt-2 text-sm font-semibold text-ui-muted">
 							{error}						
 					</p>
 					<button
 						onClick={loadJobs}
-						className="mt-6 rounded-xl bg-stone-900 px-6 py-2 text-sm font-bold text-white hover:bg-stone-800 transition">
+						className="mt-6 mx-auto">
 							Try Again
 					</button>
 			</div>
@@ -86,31 +87,31 @@ const Dashboard = () => {
 
 	return (
 		<div 
-			className="mx-auto max-w-4xl p-8">
+			className="w-full px-2 py-4">
 				<header 
-					className="mb-8 flex items-center justify-between">
+					className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 						<div>
 							<h1 
-								className="text-2xl font-black text-gray-900">
+								className="text-2xl md:text-3xl font-black text-ui-text tracking-tight uppercase">
 									My Applications
 							</h1>
 							<p 
-								className="text-gray-500">
+								className="text-sm font-semibold text-ui-muted mt-0.5">
 									{jobs.length === 0 
 										? "Ready to find your dream job"
 										: `Tracking ${jobs.length} active opportunities`
 									}
 							</p>
 						</div>
-						<button 
-							onClick={handleAddNew}
-							className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition">
+						
+						<Button
+							className="w-full sm:w-auto">
 								+ Add New Job
-						</button>
+						</Button>
 				</header>
 
 			<div
-				className="grid gap-4">
+				className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{jobs.length > 0 ? (
 						jobs.map(job => (
 							<JobCard 
@@ -121,7 +122,7 @@ const Dashboard = () => {
 						))
 					) : (
 						<div 
-							className="rounded-3xl border-2 border-dashed border-gray-100 py-20 text-center">
+							className="col-span-1 md:col-span-2 lg:col-span-3 rounded-2xl border-2 border-dashed border-ui-border bg-ui-card/50 py-24 text-center">
 								<p 
 									className="text-lg font-bold text-gray-300">
 									Your tracker is empty. Time to apply!
@@ -133,7 +134,7 @@ const Dashboard = () => {
 			<Modal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
-				title="Track New Application">
+				title={selectedJob ? "Edit Application" : "Track New Application"}>
 					<JobForm
 						key={selectedJob?.id || 'new'}
 						jobToEdit={selectedJob}
