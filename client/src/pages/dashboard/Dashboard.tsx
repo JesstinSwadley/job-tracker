@@ -105,6 +105,7 @@ const Dashboard = () => {
 						</div>
 						
 						<Button
+							onClick={handleAddNew}
 							className="w-full sm:w-auto">
 								+ Add New Job
 						</Button>
