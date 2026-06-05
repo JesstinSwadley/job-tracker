@@ -6,6 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import * as authServices from '../services/auth';
 import { renderWithProviders } from './test-utils';
 import LoginForm from '../components/auth/LoginForm';
+import RegisterForm from '../components/auth/RegisterForm';
 
 
 vi.mock('../services/auth', () => ({
@@ -19,7 +20,7 @@ describe('Authentication Flow Integration', () => {
 		localStorage.clear();
 	});
 
-	describe('Registration Flow', () => {
+	describe('Login Flow', () => {
 		test('should prevent submissino and render validation errors on empty fields', async () => {
 			const user = userEvent.setup();
 
@@ -57,6 +58,49 @@ describe('Authentication Flow Integration', () => {
 			});
 
 			expect(await screen.findByText(/welcome back, test_dev/i)).toBeInTheDocument();
+		});
+	});
+
+	describe('Registration Flow', () => {
+		test('should reject submissions if passwords do not match', async () => {
+			const user = userEvent.setup();
+
+			renderWithProviders(<RegisterForm />, '/register');
+
+			await user.type(screen.getByLabelText(/^username/i), 'new_user');
+			await user.type(screen.getByLabelText(/^password/i), 'Password123');
+			await user.type(screen.getByLabelText(/confirm password/i), 'DifferentPassword456');
+			await user.click(screen.getByRole('button', { name: /register/i }));
+
+			expect(authServices.registerRequest).not.toHaveBeenCalled();
+			expect(await screen.findByText(/passwords do not match/i)).toBeInTheDocument();
+		});
+
+		test('should invoke registerRequest, automatically sign user in, and fire a welcome toast', async () => {
+			const user = userEvent.setup();
+
+			const mockRegisterPayload = {
+				token: 'mock-register-token',
+				username: 'new_user'
+			};
+
+			vi.mocked(authServices.registerRequest).mockResolvedValue(mockRegisterPayload);
+
+			renderWithProviders(<RegisterForm />, '/register');
+
+			await user.type(screen.getByLabelText(/^username/i), 'new_user');
+			await user.type(screen.getByLabelText(/^password/i), 'Password123');
+			await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+			await user.click(screen.getByRole('button', { name: /register/i }));
+
+			expect(authServices.registerRequest).toHaveBeenCalledWith('new_user', 'Password123');
+
+			await waitFor(() => {
+				expect(localStorage.getItem('token')).toBe('mock-register-token');
+				expect(localStorage.getItem('username')).toBe('new_user');
+			});
+
+			expect(await screen.findByText(/welcome to jobtracker, new_user/i)).toBeInTheDocument();
 		});
 	});
 });
