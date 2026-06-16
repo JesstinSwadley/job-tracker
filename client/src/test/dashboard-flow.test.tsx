@@ -9,6 +9,7 @@ import { screen, waitFor } from "@testing-library/react";
 vi.mock('../services/jobs', () => ({
 	fetchJobs: vi.fn(),
 	createJob: vi.fn(),
+	updateJob: vi.fn(),
 }));
 
 describe('Dashboard Core Feature Integration', () => {
@@ -86,6 +87,85 @@ describe('Dashboard Core Feature Integration', () => {
 			expect(screen.getByText('Staff Frontend Engineer')).toBeInTheDocument();
 			expect(screen.getByText('Stripe')).toBeInTheDocument();
 			expect(screen.getByText('Tracking 1 active opportunities')).toBeInTheDocument();
+		});
+	});
+	
+	describe('Update Lifecycle', () => {
+		test('should open form with pre-filled values, send modified payload to API, and refresh the dashboard grid', async () => {
+			const user = userEvent.setup();
+			const mockJobId = 999;
+
+			const baseJob = {
+				user_id: 123,
+				id: mockJobId,
+				position: 'React Developer',
+				company: 'Netflix',
+				status: 'Applied',
+				location_type: 'Remote',
+				salary: '$120,000',
+				source: 'Google',
+			};
+
+			const updatedJob = {
+				...baseJob,
+				position: 'Senior React Developer',
+				salary: '$150,000'
+			};
+
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce([baseJob]);
+
+			vi.mocked(jobService.updateJob).mockResolvedValue(updatedJob);
+
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce([updatedJob]);
+
+			renderWithProviders(<Dashboard />, '/dashboard');
+
+			expect(await screen.findByText('React Developer')).toBeInTheDocument();
+			expect(screen.getByText('Netflix')).toBeInTheDocument();
+
+			const editButton = screen.getByRole('button', {
+				name: /edit/i
+			});
+			await user.click(editButton);
+
+			expect(screen.getByText('Edit Application')).toBeInTheDocument();
+
+			const positionInput = screen.getByLabelText(/position \*/i);
+			const salaryInput = screen.getByLabelText(/salary/i);
+			expect(positionInput).toHaveValue('React Developer');
+			expect(salaryInput).toHaveValue('$120,000');
+
+			await user.clear(positionInput);
+			await user.type(positionInput, 'Senior React Developer');
+
+			await user.clear(salaryInput);
+			await user.type(salaryInput, '$150,000');
+
+			const saveButton = screen.getByRole('button', {
+				name: /update job/i
+			});
+			await user.click(saveButton);
+
+			expect(jobService.updateJob).toHaveBeenCalledWith(mockJobId, {
+				position: 'Senior React Developer',
+				company: 'Netflix',
+				status: 'Applied',
+				location_type: 'Remote',
+				salary: '$150,000',
+				source: 'Google',
+				job_url: '',
+				notes: '',
+			});
+
+			expect(await screen.findByText(/senior react developer at netflix has been updated/i)).toBeInTheDocument();
+
+			await waitFor(() => {
+				expect(screen.queryByText('Edit Application')).not.toBeInTheDocument();
+			});
+
+			expect(screen.getByText('Senior React Developer')).toBeInTheDocument();
+			expect(screen.getByText('$150,000')).toBeInTheDocument();
+			expect(screen.queryByText('React Developer')).not.toBeInTheDocument();
 		});
 	});
 });
