@@ -10,6 +10,7 @@ vi.mock('../services/jobs', () => ({
 	fetchJobs: vi.fn(),
 	createJob: vi.fn(),
 	updateJob: vi.fn(),
+	deleteJob: vi.fn(),
 }));
 
 describe('Dashboard Core Feature Integration', () => {
@@ -166,6 +167,49 @@ describe('Dashboard Core Feature Integration', () => {
 			expect(screen.getByText('Senior React Developer')).toBeInTheDocument();
 			expect(screen.getByText('$150,000')).toBeInTheDocument();
 			expect(screen.queryByText('React Developer')).not.toBeInTheDocument();
+		});
+	});
+
+	describe('Delete Lifecycle', () => {
+		test('', async () => {
+			const user = userEvent.setup();
+
+			window.confirm = vi.fn();
+			const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+			const mockJobId = 789;
+			const baseJob = {
+				user_id: 123,
+				id: mockJobId,
+				position: 'Solutions Architect',
+				company: 'AWS',
+				status: 'Interviewing',
+				location_type: 'Remote',
+				salary: '$120,000',
+				source: 'Lever',
+			};
+
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce([baseJob]);
+			vi.mocked(jobService.deleteJob).mockResolvedValue(undefined);
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce([]);
+
+			renderWithProviders(<Dashboard />, '/dashboard');
+
+			expect(await screen.findByText('Solutions Architect')).toBeInTheDocument();
+			expect(screen.getByText('AWS')).toBeInTheDocument();
+
+			const deleteButton = screen.getByRole('button', {
+				name: /delete/i
+			});
+			await user.click(deleteButton);
+
+			expect(confirmSpy).toHaveBeenCalledWith("Delete application for Solutions Architect at AWS");
+
+			expect(await screen.findByText(/application removed/i)).toBeInTheDocument();
+
+			expect(await screen.findByText(/your tracker is empty/i)).toBeInTheDocument();
+			expect(screen.queryByText('Solutions Architect')).not.toBeInTheDocument();
+			expect(screen.queryByText('AWS')).not.toBeInTheDocument();
 		});
 	});
 });
