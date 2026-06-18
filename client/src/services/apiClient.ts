@@ -51,7 +51,10 @@ export const apiClient = async <T>(endpoint: string, options: ApiOptions = {}): 
 	if (!response.ok) {
 		const errorData = await response.json().catch(() => ({}));
 
-		throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+		throw new ApiError(
+			errorData.error || `HTTP error! status: ${response.status}`,
+			response.status
+		);
 	}
 
 	const contentType = response.headers.get("content-type");
