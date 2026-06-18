@@ -90,6 +90,68 @@ describe('Dashboard Core Feature Integration', () => {
 			expect(screen.getByText('Tracking 1 active opportunities')).toBeInTheDocument();
 		});
 	});
+
+	describe('Reading Lifecycle', () => {
+		test('should show loading spinner when initially fetching data', () => {
+			vi.mocked(jobService.fetchJobs).mockReturnValue(new Promise(() => {}));
+
+			renderWithProviders(<Dashboard />, '/dashboard');
+
+			expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+		});
+
+		test('should show error screen and retry button when API request fails', async () => {
+			vi.mocked(jobService.fetchJobs).mockRejectedValueOnce(new Error('500 Server Error'));
+
+			renderWithProviders(<Dashboard />, '/dashboard');
+
+			expect(await screen.findByText(/unable to load jobs/i)).toBeInTheDocument();
+			expect(screen.getByText(/network error/i)).toBeInTheDocument();
+
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce([]);
+
+			const retryButton = screen.getByRole('button', {
+				name: /try again/i
+			});
+			await userEvent.click(retryButton);
+			
+			expect(await screen.findByText(/your tracker is empty/i)).toBeInTheDocument();
+		});
+
+		test('should render application cards when data is successfully fetched',  async () => {
+			const mockJobs = [
+                { 
+					id: 1, 
+					user_id: 456,
+					position: 'Frontend Dev', 
+					company: 'TechCo', 
+					status: 'Applied', 
+					location_type: 'Remote', 
+					salary: '$100k', 
+					source: 'Indeed' 
+				},
+                { 
+					id: 2,
+					user_id: 456, 
+					position: 'Backend Dev', 
+					company: 'DataCorp', 
+					status: 'Interviewing', 
+					location_type: 'Hybrid', 
+					salary: '$120k', 
+					source: 'LinkedIn' 
+				}
+            ];
+
+			vi.mocked(jobService.fetchJobs).mockResolvedValueOnce(mockJobs);
+
+			renderWithProviders(<Dashboard />, '/dashboard');
+
+			expect(await screen.findByText('Frontend Dev')).toBeInTheDocument();
+			expect(screen.getByText('Backend Dev')).toBeInTheDocument();
+
+			expect(screen.getByText(/tracking 2 active opportunities/i)).toBeInTheDocument();
+		});
+	});
 	
 	describe('Update Lifecycle', () => {
 		test('should open form with pre-filled values, send modified payload to API, and refresh the dashboard grid', async () => {
