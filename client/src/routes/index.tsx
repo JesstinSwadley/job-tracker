@@ -12,7 +12,7 @@ const PageLoader = () => (
 	<div 
 		className="flex h-64 w-full items-center justify-center">
 		<div 
-			className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+			className="h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent shaddow-md shadow-brand/5"></div>
 	</div>
 )
 
