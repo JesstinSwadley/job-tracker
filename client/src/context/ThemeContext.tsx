@@ -16,22 +16,30 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 	useEffect(() => {
 		const root = window.document.documentElement;
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-		root.classList.remove("light", "dark");
+		const applyTheme = () => {
+			root.classList.remove("light", "dark");
 
-		let activeTheme = theme;
+			const activeTheme = theme === "system"
+					? (mediaQuery.matches ? "dark" : "light")
+					: theme;
 
-		if (theme === "system") {
-			activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light";
+			root.classList.remove("light", "dark");
+			root.style.colorScheme = activeTheme;
 		}
 
-		root.classList.add(activeTheme);
-
-		root.style.setProperty('color-scheme', activeTheme);
-
+		applyTheme();
 		localStorage.setItem("ui-theme", theme);
+
+		if (theme !== "system") {
+			return
+		}
+
+		mediaQuery.addEventListener("change", applyTheme);
+		return () => {
+			mediaQuery.removeEventListener("change", applyTheme);
+		}
 	}, [theme]);
 
 
