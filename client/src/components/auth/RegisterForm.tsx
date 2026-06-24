@@ -57,9 +57,10 @@ const RegisterForm = () => {
 			toast.error(err.message || "Registration failed");
 
 			if (err.message?.toLowerCase().includes("username")) {
-				setFieldErrors({
+				setFieldErrors(prev => ({
+					...prev,
 					username: [err.message]
-				});
+				}));
 			}
 		} finally {
 			setIsLoading(false);
@@ -80,7 +81,7 @@ const RegisterForm = () => {
 							
 							<Link
 								to="/login"
-								className="text-sm font-bold text-gray-300">
+								className="text-sm font-bold text-ui-muted hover:text-brand transition-colors flex items-center gap-1">
 									Already have an account?
 
 									<span 
