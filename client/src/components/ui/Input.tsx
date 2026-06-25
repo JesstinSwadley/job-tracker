@@ -22,7 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 						className={
 							cn(
 								INPUT_STYLES,
-								error && "border-red-500/50 bg-red-500/5 focus:ring-red-500/20",
+								error && "border-ui-error/50 bg-ui-error/5 focus:ring-ui-error/20",
 								className
 							)
 						}

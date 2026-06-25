@@ -23,7 +23,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 							cn(
 								INPUT_STYLES,
 								"resize-y",
-								error && "border-red-500/50 bg-red-500/5",
+								error && "border-ui-error/50 bg-ui-error/5",
 								className
 							)
 						}

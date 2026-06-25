@@ -34,12 +34,14 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) =>
 		<div
 			onClick={onClose}
 			role="dialog"
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-modal-backdrop">
 				<div
 					onClick={(e) => e.stopPropagation()}
 					className={
 						cn(
-							"w-full bg-ui-card p-6 md:p-8 shadow-2xl animate-in zoom-in-95 duration-200",
+							"w-full bg-ui-card p-6 md:p-8 shadow-2xl animate-modal-content",
 							"rounded-brand border border-ui-border",
 							MODAL_SIZES[size]
 						)

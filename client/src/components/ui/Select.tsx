@@ -32,7 +32,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 									cn(
 										INPUT_STYLES,
 										"appearance-none pr-10 cursor-pointer",
-										error && "border-red-500/50 bg-red-500/5 focus:ring-red-500/20",
+										error && "border-ui-error/50 bg-ui-error/5 focus:ring-red-500/20",
 										className
 									)
 								}
