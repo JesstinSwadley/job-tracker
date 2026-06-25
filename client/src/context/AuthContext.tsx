@@ -24,6 +24,13 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 		setUser(null);
 	};
 
+	const login = (data: { token: string; username: string }) => {
+		localStorage.setItem("token", data.token);
+		localStorage.setItem("username", data.username);
+
+		setUser({ username: data.username });
+	};
+
 	useEffect(() => {
 		const initializeAuth = () => {
 			try {
@@ -36,8 +43,7 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 			} catch (err) {
 				console.error("Auth initialization failed:", err);
 				
-				localStorage.removeItem("token");
-				localStorage.removeItem("username");
+				logout();
 			} finally {
 				setIsLoading(false);
 			}
@@ -46,8 +52,16 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 		initializeAuth();
 
 		const handleStorageChange = (e: StorageEvent) => {
-			if (e.key === "token" && !e.newValue) {
-				setUser(null);
+			if (e.key === "token") {
+				if (!e.newValue) {
+					setUser(null);
+				} else {
+					const username = localStorage.getItem("username");
+
+					if (username) {
+						setUser({ username });
+					}
+				}
 			}
 		};
 
@@ -58,12 +72,7 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 		}
 	}, []);
 
-	const login = (data: { token: string; username: string }) => {
-		localStorage.setItem("token", data.token);
-		localStorage.setItem("username", data.username);
 
-		setUser({ username: data.username });
-	};
 
 	return (
 		<AuthContext.Provider value={{
@@ -81,7 +90,9 @@ export const AuthProvider = ({ children } : { children: ReactNode }) => {
 export const useAuth = () => {
 	const context = useContext(AuthContext);
 
-	if (!context) throw new Error("useAuth must be used within AuthProvider");
+	if (!context) {
+		throw new Error("useAuth must be used within AuthProvider")
+	};
 
 	return context;
 }
