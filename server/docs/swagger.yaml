@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: API for tracking job applications.
+  title: Job Tracker API
+  version: "0.1"
+paths: {}
+swagger: "2.0"
