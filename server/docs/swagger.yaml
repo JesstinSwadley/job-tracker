@@ -1,9 +1,62 @@
 basePath: /
+definitions:
+  server.CreateJobRequest:
+    properties:
+      company:
+        type: string
+      position:
+        type: string
+      status:
+        type: string
+    type: object
+  server.ErrorResponse:
+    properties:
+      error:
+        example: company and position are required
+        type: string
+    type: object
+  server.JobResponse:
+    properties:
+      company:
+        type: string
+      id:
+        type: integer
+      position:
+        type: string
+      status:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: API for tracking job applications.
   title: Job Tracker API
   version: "0.1"
-paths: {}
+paths:
+  /jobs:
+    post:
+      consumes:
+      - application/json
+      description: Submit a new job application to track
+      parameters:
+      - description: Job details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.CreateJobRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/server.JobResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+      summary: Create a new job
+      tags:
+      - jobs
 swagger: "2.0"

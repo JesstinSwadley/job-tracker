@@ -7,30 +7,34 @@ import (
 	"sync"
 )
 
-type createJobRequest struct {
+type CreateJobRequest struct {
 	Company  string `json:"company"`
 	Position string `json:"position"`
 	Status   string `json:"status"`
 }
 
-type jobResponse struct {
+type JobResponse struct {
 	ID       int    `json:"id"`
 	Company  string `json:"company"`
 	Position string `json:"position"`
 	Status   string `json:"status"`
 }
 
+type ErrorResponse struct {
+	Error string `json:"error" example:"company and position are required"`
+}
+
 type Server struct {
 	mu     sync.Mutex
 	nextID int
-	jobs   map[int]jobResponse
+	jobs   map[int]JobResponse
 	mux    *http.ServeMux
 }
 
 func New() *Server {
 	s := &Server{
 		nextID: 1,
-		jobs:   make(map[int]jobResponse),
+		jobs:   make(map[int]JobResponse),
 		mux:    http.NewServeMux(),
 	}
 
@@ -52,8 +56,18 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /jobs", s.handleCreateJob)
 }
 
+// handleCreateJob godoc
+// @Summary Create a new job
+// @Description Submit a new job application to track
+// @Tags jobs
+// @Accept json
+// @Produce json
+// @Param request body CreateJobRequest true "Job details"
+// @Success 201 {object} JobResponse
+// @Failure 400 {object} ErrorResponse
+// @Router /jobs [post]
 func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
-	var req createJobRequest
+	var req CreateJobRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error" : "invalid request body"}`, http.StatusBadRequest)
@@ -72,7 +86,7 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 
-	newJob := jobResponse{
+	newJob := JobResponse{
 		ID:       s.nextID,
 		Company:  req.Company,
 		Position: req.Position,
