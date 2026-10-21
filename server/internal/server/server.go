@@ -37,41 +37,6 @@ func New() *Server {
 	s.routes()
 
 	return s
-
-	// mux := http.NewServeMux()
-
-	// mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.WriteHeader(http.StatusOK)
-	// 	w.Write([]byte("OK"))
-	// })
-
-	// mux.HandleFunc("POST /jobs", func(w http.ResponseWriter, r *http.Request) {
-	// 	var req createJobRequest
-
-	// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-	// 		http.Error(w, `{"error" : "invalid request body"}`, http.StatusBadRequest)
-	// 		return
-	// 	}
-
-	// 	if strings.TrimSpace(req.Company) == "" || strings.TrimSpace(req.Position) == "" {
-	// 		http.Error(w, `{"error":"company and position are required"}`, http.StatusBadRequest)
-
-	// 		return
-	// 	}
-
-	// 	resp := jobResponse{
-	// 		ID:       1,
-	// 		Company:  req.Company,
-	// 		Position: req.Position,
-	// 		Status:   req.Status,
-	// 	}
-
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	w.WriteHeader(http.StatusCreated)
-	// 	_ = json.NewEncoder(w).Encode(resp)
-	// })
-
-	// return mux
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
