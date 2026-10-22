@@ -1,122 +1,56 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import CreateJobForm, { type CreateJobInput } from './components/CreateJobForm'
 
-function App() {
-  const [count, setCount] = useState(0)
+interface Job {
+	id: number
+	company: string
+	position: string
+	status: string
+}
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+const App = () => {
+	const [latestJob, setLatestJob] = useState<Job | null>(null)
+	const [error, setError] = useState<string | null>(null)
 
-      <div className="ticks"></div>
+	const handleCreateJob = async (input: CreateJobInput) => {
+		setError(null)
+		try {
+		const res = await fetch('/jobs', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(input),
+		})
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+		if (!res.ok) {
+			const errData = await res.json()
+			throw new Error(errData.error || 'Failed to create job')
+		}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+		const data: Job = await res.json()
+		setLatestJob(data)
+		} catch (err) {
+		setError(err instanceof Error ? err.message : 'An error occurred')
+		}
+	}
+
+	return (
+		<main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px' }}>
+		<h1>Job Tracker</h1>
+		<CreateJobForm onSubmit={handleCreateJob} />
+
+		{error && <p style={{ color: 'red' }}>Error: {error}</p>}
+
+		{latestJob && (
+			<section style={{ marginTop: '1.5rem', padding: '1rem', border: '1px solid #ccc' }}>
+			<h3>Created Job:</h3>
+			<p>
+				<strong>#{latestJob.id}</strong> {latestJob.position} at {latestJob.company} (
+				<em>{latestJob.status}</em>)
+			</p>
+			</section>
+		)}
+		</main>
+	)
 }
 
 export default App
