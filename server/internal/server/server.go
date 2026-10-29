@@ -54,6 +54,7 @@ func (s *Server) routes() {
 	})
 
 	s.mux.HandleFunc("POST /jobs", s.handleCreateJob)
+	s.mux.HandleFunc("GET /jobs", s.handleGetJobs)
 }
 
 // handleCreateJob godoc
@@ -101,4 +102,28 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(newJob)
+}
+
+// @Summary Get all jobs
+// @Description Retrieve a list of all tracked jobs
+// @Tags jobs
+// @Produce json
+// @Success 200 {array} JobResponse
+// @Router /jobs [get]
+func (s *Server) handleGetJobs(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	jobs := make([]JobResponse, 0, len(s.jobs))
+
+	for i := 1; i < s.nextID; i++ {
+		if job, exists := s.jobs[i]; exists {
+			jobs = append(jobs, job)
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(jobs)
 }

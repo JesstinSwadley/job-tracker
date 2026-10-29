@@ -34,6 +34,20 @@ info:
   version: "0.1"
 paths:
   /jobs:
+    get:
+      description: Retrieve a list of all tracked jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/server.JobResponse'
+            type: array
+      summary: Get all jobs
+      tags:
+      - jobs
     post:
       consumes:
       - application/json

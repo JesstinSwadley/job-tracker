@@ -16,6 +16,27 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/jobs": {
+            "get": {
+                "description": "Retrieve a list of all tracked jobs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "Get all jobs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.JobResponse"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Submit a new job application to track",
                 "consumes": [
