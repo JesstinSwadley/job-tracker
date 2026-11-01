@@ -26,6 +26,15 @@ definitions:
       status:
         type: string
     type: object
+  server.UpdateJobRequest:
+    properties:
+      company:
+        type: string
+      position:
+        type: string
+      status:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -71,6 +80,45 @@ paths:
           schema:
             $ref: '#/definitions/server.ErrorResponse'
       summary: Create a new job
+      tags:
+      - jobs
+  /jobs/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update an existing job by ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update job data
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/server.UpdateJobRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.JobResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a job
       tags:
       - jobs
 swagger: "2.0"

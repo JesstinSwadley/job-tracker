@@ -3,11 +3,18 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 )
 
 type CreateJobRequest struct {
+	Company  string `json:"company"`
+	Position string `json:"position"`
+	Status   string `json:"status"`
+}
+
+type UpdateJobRequest struct {
 	Company  string `json:"company"`
 	Position string `json:"position"`
 	Status   string `json:"status"`
@@ -55,6 +62,7 @@ func (s *Server) routes() {
 
 	s.mux.HandleFunc("POST /jobs", s.handleCreateJob)
 	s.mux.HandleFunc("GET /jobs", s.handleGetJobs)
+	s.mux.HandleFunc("PUT /jobs/{id}", s.handleUpdateJob)
 }
 
 // handleCreateJob godoc
@@ -126,4 +134,70 @@ func (s *Server) handleGetJobs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = json.NewEncoder(w).Encode(jobs)
+}
+
+// @Summary Update a job
+// @Description Update an existing job by ID
+// @Tags jobs
+// @Accept json
+// @Produce json
+// @Param id path int true "Job ID"
+// @Param job body UpdateJobRequest true "Update job data"
+// @Success 200 {object} JobResponse
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /jobs/{id} [put]
+func (s *Server) handleUpdateJob(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid job id"})
+		return
+	}
+
+	var req UpdateJobRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	if req.Company == "" || req.Position == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "company and position are required"})
+		return
+	}
+
+	if req.Status == "" {
+		req.Status = "Applied"
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.jobs[id]; !exists {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "job not found"})
+		return
+	}
+
+	updated := JobResponse{
+		ID:       id,
+		Company:  req.Company,
+		Position: req.Position,
+		Status:   req.Status,
+	}
+
+	s.jobs[id] = updated
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(updated)
 }

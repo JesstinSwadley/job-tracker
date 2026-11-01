@@ -3,6 +3,7 @@ package server_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -159,6 +160,88 @@ func TestGetJobs(t *testing.T) {
 
 		if jobs[1].ID != 2 || jobs[1].Company != "Stripe" {
 			t.Errorf("expected second job to be Stripe (ID 2), got %+v", jobs[1])
+		}
+	})
+}
+
+func TestUpdateJob(t *testing.T) {
+	t.Run("sucessfully updates an existing job", func(t *testing.T) {
+		router := server.New()
+
+		// Seed jobs
+		createBody := bytes.NewReader([]byte(`{"company": "Google", "position": "Web Developer", "status": "Applied"}`))
+		createReq := httptest.NewRequest(http.MethodPost, "/jobs", createBody)
+		createReq.Header.Set("Content-Type", "application/json")
+		createRec := httptest.NewRecorder()
+		router.ServeHTTP(createRec, createReq)
+
+		if createRec.Code != http.StatusCreated {
+			t.Fatalf("failed to seed job: got status %d", createRec.Code)
+		}
+
+		var created server.JobResponse
+
+		if err := json.NewDecoder(createRec.Body).Decode(&created); err != nil {
+			t.Fatalf("failed to decode created job: %v", err)
+		}
+
+		updatePayload := `{"company":"Google","position":"Senior Software Engineer","status":"Interviewing"}`
+		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d", created.ID), bytes.NewReader([]byte(updatePayload)))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", rec.Code)
+		}
+
+		var updated server.JobResponse
+
+		if err := json.NewDecoder(rec.Body).Decode(&updated); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if updated.ID != created.ID {
+			t.Errorf("expected ID %d, got %d", created.ID, updated.ID)
+		}
+
+		if updated.Position != "Senior Software Engineer" {
+			t.Errorf("expected position 'Senior Software Engineer', got '%s'", updated.Position)
+		}
+
+		if updated.Status != "Interviewing" {
+			t.Errorf("expected status 'Interviewing', got '%s'", updated.Status)
+		}
+	})
+
+	t.Run("returns 404 when job does not exist", func(t *testing.T) {
+		router := server.New()
+
+		updatePayload := `{"company":"Netflix","position":"Engineer","status":"Applied"}`
+		req := httptest.NewRequest(http.MethodPut, "/jobs/999", bytes.NewReader([]byte(updatePayload)))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("expected status 404, got %d", rec.Code)
+		}
+	})
+
+	t.Run("returns 400 for invalid job ID", func(t *testing.T) {
+		router := server.New()
+
+		updatePayload := `{"company":"Netflix","position":"Engineer","status":"Applied"}`
+		req := httptest.NewRequest(http.MethodPut, "/jobs/invalid-id", bytes.NewReader([]byte(updatePayload)))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("expected status 400, got %d", rec.Code)
 		}
 	})
 }
