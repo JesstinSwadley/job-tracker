@@ -9,9 +9,10 @@ export interface Job {
 
 interface JobListProps {
 	jobs: Job[]
+	onEdit?: (job: Job) => void
 }
 
-const JobList = ({ jobs }: JobListProps) => {
+const JobList = ({ jobs, onEdit }: JobListProps) => {
 	if (jobs.length === 0) {
 		return <p>No jobs tracked yet.</p>
 	}
@@ -24,6 +25,15 @@ const JobList = ({ jobs }: JobListProps) => {
 						<span>{job.company}</span> - <span>{job.position}</span> [
 							<span>{job.status}</span>
 						]
+					
+					{onEdit && (
+						<button
+							type='button'
+							onClick={() => onEdit(job)}
+							style={{ marginLeft: '1rem' }}>
+								Edit
+						</button>
+					)}
 				</li>
 			))}
 		</ul>
