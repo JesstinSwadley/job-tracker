@@ -3,12 +3,14 @@ import CreateJobForm, { type CreateJobInput } from './components/CreateJobForm'
 import JobList, { type Job } from './components/JobList'
 import type { UpdateJobInput } from './components/UpdateJobForm'
 import UpdateJobForm from './components/UpdateJobForm'
+import DeleteJobModal from './components/DeleteJobModal'
 
 
 const App = () => {
 	const [jobs, setJobs] = useState<Job[]>([])
 	const [loading, setLoading] = useState(true)
 	const [editingJob, setEditingJob] = useState<Job | null>(null)
+	const [deletingJob, setDeletingJob] = useState<Job | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
 	const fetchJobs = async () => {
@@ -91,6 +93,27 @@ const App = () => {
 		}
 	}
 
+	const handleDeleteJob = async (id: number) => {
+		setError(null) 
+
+		try {
+			const res = await fetch(`/jobs/${id}`, {
+				method: 'DELETE'
+			})
+
+			if (!res.ok) {
+				const errData = await res.json()
+
+				throw new Error(errData.error || 'Failed to update job')
+			}
+
+			setJobs((prev) => prev.filter((j) => j.id !== id))
+			setDeletingJob(null)
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'An error occured')
+		}
+	}
+
 	return (
 		<main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px' }}>
 			<h1>Job Tracker</h1>
@@ -122,9 +145,17 @@ const App = () => {
 				) : (
 					<JobList
 						jobs={jobs}
-						onEdit={setEditingJob} />
+						onEdit={setEditingJob}
+						onDelete={setDeletingJob} />
 				)}
 			</section>
+
+			{deletingJob && (
+				<DeleteJobModal 
+					job={deletingJob}
+					onConfirm={handleDeleteJob}
+					onCancel={() => setDeletingJob(null)} />
+			)}
 		</main>
 	)
 }
