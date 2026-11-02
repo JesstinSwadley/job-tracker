@@ -12,6 +12,7 @@ A lightweight, fast job application tracker built with a product-first engineeri
 - **Job Creation**: Submit new job applications with company, position, and status.
 - **Job Listing**: View tracked applications in ascending order with an empty-state fallback.
 - **Job Updates**: Edit existing application details (company, position, lifecycle status) with immediate UI sync and backend persistence.
+- **Job Deletion**: Remove tracked applications safely using a confirmation modal and complete backend removal.
 - **Interactive API Docs**: Auto-generated Swagger documentation and schema definitions.
 
 ## Prerequisites
@@ -91,6 +92,7 @@ go test -v ./...
 |  GET      |  /jobs       |  Retrieve all tracked jobs     |  200            | 
 |  POST     |  /jobs       |  Create a new job appliaction  |  201, 400       |
 |  PUT      |  /jobs/{id}  |  Update job details or status  |  200, 400, 404  |
+|  DELETE   |  /jobs/{id}  |  Delete a tracked job          |  204, 400, 404  |
 
 ### Regenerating Swagger Documentation
 Whenever handler annotations change, regenerate the documentation:
