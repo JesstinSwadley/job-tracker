@@ -63,6 +63,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /jobs", s.handleCreateJob)
 	s.mux.HandleFunc("GET /jobs", s.handleGetJobs)
 	s.mux.HandleFunc("PUT /jobs/{id}", s.handleUpdateJob)
+	s.mux.HandleFunc("DELETE /jobs/{id}", s.handleDeleteJob)
 }
 
 // handleCreateJob godoc
@@ -200,4 +201,38 @@ func (s *Server) handleUpdateJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(updated)
+}
+
+// @Summary Delete a job
+// @Description Remove a tracked job by ID
+// @Tags jobs
+// @Param id path int true "Job ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /jobs/{id} [delete]
+func (s *Server) handleDeleteJob(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid job id"})
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.jobs[id]; !exists {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "job not found"})
+		return
+	}
+
+	delete(s.jobs, id)
+
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -245,3 +245,74 @@ func TestUpdateJob(t *testing.T) {
 		}
 	})
 }
+
+func TestDeleteJob(t *testing.T) {
+	t.Run("sucessfully deletes an existing job", func(t *testing.T) {
+		router := server.New()
+
+		// Seed jobs
+		createBody := bytes.NewReader([]byte(`{"company": "Google", "position": "Web Developer", "status": "Applied"}`))
+		createReq := httptest.NewRequest(http.MethodPost, "/jobs", createBody)
+		createReq.Header.Set("Content-Type", "application/json")
+		createRec := httptest.NewRecorder()
+		router.ServeHTTP(createRec, createReq)
+
+		if createRec.Code != http.StatusCreated {
+			t.Fatalf("failed to seed job: got status %d", createRec.Code)
+		}
+
+		var created server.JobResponse
+
+		if err := json.NewDecoder(createRec.Body).Decode(&created); err != nil {
+			t.Fatalf("failed to decode created job: %v", err)
+		}
+
+		// Delete the Job
+		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/jobs/%d", created.ID), nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("expected status 204 No Content, got %d", rec.Code)
+		}
+
+		// Confirm Job Deletion
+		getReq := httptest.NewRequest(http.MethodGet, "/jobs", nil)
+		getRec := httptest.NewRecorder()
+		router.ServeHTTP(getRec, getReq)
+
+		var jobs []server.JobResponse
+
+		if err := json.NewDecoder(getRec.Body).Decode(&jobs); err != nil {
+			t.Fatalf("failed to decode jobs list: %v", err)
+		}
+
+		if len(jobs) != 0 {
+			t.Errorf("expected 0 jobs after deletion, got %d", len(jobs))
+		}
+	})
+
+	t.Run("returns 404 when job does not exist", func(t *testing.T) {
+		router := server.New()
+
+		req := httptest.NewRequest(http.MethodDelete, "/jobs/999", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("expected status 404, got %d", rec.Code)
+		}
+	})
+
+	t.Run("returns 400 for invalid job ID", func(t *testing.T) {
+		router := server.New()
+
+		req := httptest.NewRequest(http.MethodDelete, "/jobs/invalid-id", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("expected status 400, got %d", rec.Code)
+		}
+	})
+}
