@@ -8,12 +8,13 @@ import (
 )
 
 // @title 		Job Tracker API
-// @version 	0.1
+// @version 	0.2
 // @description API for tracking job applications.
 // @host		localhost:8080
 // @BasePath	/
 func main() {
-	router := server.New()
+	app := server.New("./jobtracker.db")
+	router := app.RegisterRoutes()
 
 	log.Println("Server running on :8080")
 	if err := http.ListenAndServe(":8080", router); err != nil {

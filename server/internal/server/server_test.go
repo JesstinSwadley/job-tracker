@@ -12,7 +12,8 @@ import (
 )
 
 func TestHealthCheck(t *testing.T) {
-	router := server.New()
+	app := server.New("../../jobtracker.db")
+	router := app.RegisterRoutes()
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
@@ -29,34 +30,38 @@ func TestHealthCheck(t *testing.T) {
 }
 
 func TestCreateJob(t *testing.T) {
-	router := server.New()
+	app := server.New("../../jobtracker.db")
+	handler := app.RegisterRoutes()
 
 	tests := []struct {
-		name           string
-		body           string
-		expectedStatus int
-		expectedID     int
+		name                string
+		body                string
+		expectedStatus      int
+		expectedStage       string
+		expectedStatusField string
 	}{
 		{
-			name:           "create first job",
-			body:           `{"company": "Acme", "position": "Web Developer", "status": "Applied"}`,
-			expectedStatus: http.StatusCreated,
-			expectedID:     1,
+			name:                "create first job (defaults applied)",
+			body:                `{"company": "Acme", "title": "Web Developer"}`,
+			expectedStatus:      http.StatusCreated,
+			expectedStage:       "Search",
+			expectedStatusField: "Active",
 		},
 		{
-			name:           "create second job",
-			body:           `{"company": "Tesla", "position": "Web Developer", "status": "Applied"}`,
-			expectedStatus: http.StatusCreated,
-			expectedID:     2,
+			name:                "create second job (explicit fields)",
+			body:                `{"company": "Tesla", "title": "Backend Engineer", "stage": "Applied", "status": "Rejected"}`,
+			expectedStatus:      http.StatusCreated,
+			expectedStage:       "Applied",
+			expectedStatusField: "Rejected",
 		},
 		{
 			name:           "empty company",
-			body:           `{"company": "", "position": "Web Developer", "status": "Applied"}`,
+			body:           `{"company": "", "title": "Web Developer"}`,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "empty position",
-			body:           `{"company": "Acme", "position": "", "status": "Applied"}`,
+			name:           "empty title",
+			body:           `{"company": "Acme", "title": ""}`,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
@@ -72,7 +77,7 @@ func TestCreateJob(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
-			router.ServeHTTP(rec, req)
+			handler.ServeHTTP(rec, req)
 
 			if rec.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, rec.Code)
@@ -85,8 +90,16 @@ func TestCreateJob(t *testing.T) {
 					t.Fatalf("failed to decode response: %v", err)
 				}
 
-				if int(res["id"].(float64)) != tt.expectedID {
-					t.Errorf("expected ID %d, got %v", tt.expectedID, res["id"])
+				if id, ok := res["id"].(float64); !ok || int(id) <= 0 {
+					t.Errorf("expected positive ID, got %v", res["id"])
+				}
+
+				if res["stage"] != tt.expectedStage {
+					t.Errorf("expected stage %q, got %v", tt.expectedStage, res["stage"])
+				}
+
+				if res["status"] != tt.expectedStatusField {
+					t.Errorf("expected status %q, got %v", tt.expectedStatusField, res["status"])
 				}
 			}
 		})
@@ -94,103 +107,102 @@ func TestCreateJob(t *testing.T) {
 }
 
 func TestGetJobs(t *testing.T) {
-	t.Run("returns an empty array when no jobs exist", func(t *testing.T) {
-		router := server.New()
+	app := server.New("../../jobtracker.db")
+	handler := app.RegisterRoutes()
 
+	t.Run("returns a valid JSON array of jobs", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/jobs", nil)
 		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", rec.Code)
 		}
 
 		var jobs []server.JobResponse
-
 		if err := json.NewDecoder(rec.Body).Decode(&jobs); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
-
-		if len(jobs) != 0 {
-			t.Errorf("expected 0 jobs, got %d", len(jobs))
-		}
 	})
 
-	t.Run("returns all created jobs in ascending order", func(t *testing.T) {
-		router := server.New()
-
-		createJob := func(company, position string) {
-			body := bytes.NewReader([]byte(`{"company":"` + company + `","position":"` + position + `"}`))
+	t.Run("returns created jobs in the list", func(t *testing.T) {
+		createJob := func(company, title string) server.JobResponse {
+			body := bytes.NewReader([]byte(`{"company":"` + company + `","title":"` + title + `"}`))
 			req := httptest.NewRequest(http.MethodPost, "/jobs", body)
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, req)
+			handler.ServeHTTP(rec, req)
 
 			if rec.Code != http.StatusCreated {
 				t.Fatalf("failed to seed job: got status %d", rec.Code)
 			}
+
+			var createdJob server.JobResponse
+			json.NewDecoder(rec.Body).Decode(&createdJob)
+			return createdJob
 		}
 
-		createJob("Acme", "Backend Engineer")
-		createJob("Stripe", "Frontend Engineer")
+		job1 := createJob("Acme", "Backend Engineer")
+		job2 := createJob("Stripe", "Frontend Engineer")
 
 		req := httptest.NewRequest(http.MethodGet, "/jobs", nil)
 		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", rec.Code)
 		}
 
 		var jobs []server.JobResponse
-
 		if err := json.NewDecoder(rec.Body).Decode(&jobs); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		if len(jobs) != 2 {
-			t.Fatalf("expected 2 jobs, got %d", len(jobs))
+		found1, found2 := false, false
+		for _, j := range jobs {
+			if j.ID == job1.ID {
+				found1 = true
+			}
+
+			if j.ID == job2.ID {
+				found2 = true
+			}
 		}
 
-		if jobs[0].ID != 1 || jobs[0].Company != "Acme" {
-			t.Errorf("expected first job to be Acme (ID 1), got %+v", jobs[0])
-		}
-
-		if jobs[1].ID != 2 || jobs[1].Company != "Stripe" {
-			t.Errorf("expected second job to be Stripe (ID 2), got %+v", jobs[1])
+		if !found1 || !found2 {
+			t.Errorf("expected to find both seeded jobs in the response array")
 		}
 	})
 }
 
 func TestUpdateJob(t *testing.T) {
-	t.Run("sucessfully updates an existing job", func(t *testing.T) {
-		router := server.New()
+	app := server.New("../../jobtracker.db")
+	handler := app.RegisterRoutes()
 
-		// Seed jobs
-		createBody := bytes.NewReader([]byte(`{"company": "Google", "position": "Web Developer", "status": "Applied"}`))
+	t.Run("successfully updates an existing job", func(t *testing.T) {
+		createBody := bytes.NewReader([]byte(`{"company": "Google", "title": "Web Developer", "status": "Applied"}`))
 		createReq := httptest.NewRequest(http.MethodPost, "/jobs", createBody)
 		createReq.Header.Set("Content-Type", "application/json")
 		createRec := httptest.NewRecorder()
-		router.ServeHTTP(createRec, createReq)
+		handler.ServeHTTP(createRec, createReq)
 
 		if createRec.Code != http.StatusCreated {
 			t.Fatalf("failed to seed job: got status %d", createRec.Code)
 		}
 
 		var created server.JobResponse
-
 		if err := json.NewDecoder(createRec.Body).Decode(&created); err != nil {
 			t.Fatalf("failed to decode created job: %v", err)
 		}
 
-		updatePayload := `{"company":"Google","position":"Senior Software Engineer","status":"Interviewing"}`
+		updatePayload := `{"company":"Google","title":"Senior Software Engineer","stage":"Interview 1","status":"Interviewing","notes":"Scheduled for next Tuesday"}`
 		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d", created.ID), bytes.NewReader([]byte(updatePayload)))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", rec.Code)
@@ -206,24 +218,30 @@ func TestUpdateJob(t *testing.T) {
 			t.Errorf("expected ID %d, got %d", created.ID, updated.ID)
 		}
 
-		if updated.Position != "Senior Software Engineer" {
-			t.Errorf("expected position 'Senior Software Engineer', got '%s'", updated.Position)
+		if updated.Title != "Senior Software Engineer" {
+			t.Errorf("expected title 'Senior Software Engineer', got '%s'", updated.Title)
+		}
+
+		if updated.Stage != "Interview 1" {
+			t.Errorf("expected stage 'Interview 1', got '%s'", updated.Stage)
 		}
 
 		if updated.Status != "Interviewing" {
 			t.Errorf("expected status 'Interviewing', got '%s'", updated.Status)
 		}
+
+		if updated.Notes != "Scheduled for next Tuesday" {
+			t.Errorf("expected notes 'Scheduled for next Tuesday', got '%s'", updated.Notes)
+		}
 	})
 
 	t.Run("returns 404 when job does not exist", func(t *testing.T) {
-		router := server.New()
-
-		updatePayload := `{"company":"Netflix","position":"Engineer","status":"Applied"}`
-		req := httptest.NewRequest(http.MethodPut, "/jobs/999", bytes.NewReader([]byte(updatePayload)))
+		updatePayload := `{"company":"Netflix","title":"Engineer","status":"Applied"}`
+		req := httptest.NewRequest(http.MethodPut, "/jobs/999999", bytes.NewReader([]byte(updatePayload)))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("expected status 404, got %d", rec.Code)
@@ -231,14 +249,12 @@ func TestUpdateJob(t *testing.T) {
 	})
 
 	t.Run("returns 400 for invalid job ID", func(t *testing.T) {
-		router := server.New()
-
-		updatePayload := `{"company":"Netflix","position":"Engineer","status":"Applied"}`
+		updatePayload := `{"company":"Netflix","title":"Engineer","status":"Applied"}`
 		req := httptest.NewRequest(http.MethodPut, "/jobs/invalid-id", bytes.NewReader([]byte(updatePayload)))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("expected status 400, got %d", rec.Code)
@@ -247,39 +263,36 @@ func TestUpdateJob(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	t.Run("sucessfully deletes an existing job", func(t *testing.T) {
-		router := server.New()
+	app := server.New("../../jobtracker.db")
+	handler := app.RegisterRoutes()
 
-		// Seed jobs
-		createBody := bytes.NewReader([]byte(`{"company": "Google", "position": "Web Developer", "status": "Applied"}`))
+	t.Run("successfully deletes an existing job", func(t *testing.T) {
+		createBody := bytes.NewReader([]byte(`{"company": "Google", "title": "Web Developer", "status": "Applied"}`))
 		createReq := httptest.NewRequest(http.MethodPost, "/jobs", createBody)
 		createReq.Header.Set("Content-Type", "application/json")
 		createRec := httptest.NewRecorder()
-		router.ServeHTTP(createRec, createReq)
+		handler.ServeHTTP(createRec, createReq)
 
 		if createRec.Code != http.StatusCreated {
 			t.Fatalf("failed to seed job: got status %d", createRec.Code)
 		}
 
 		var created server.JobResponse
-
 		if err := json.NewDecoder(createRec.Body).Decode(&created); err != nil {
 			t.Fatalf("failed to decode created job: %v", err)
 		}
 
-		// Delete the Job
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/jobs/%d", created.ID), nil)
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("expected status 204 No Content, got %d", rec.Code)
 		}
 
-		// Confirm Job Deletion
 		getReq := httptest.NewRequest(http.MethodGet, "/jobs", nil)
 		getRec := httptest.NewRecorder()
-		router.ServeHTTP(getRec, getReq)
+		handler.ServeHTTP(getRec, getReq)
 
 		var jobs []server.JobResponse
 
@@ -287,17 +300,17 @@ func TestDeleteJob(t *testing.T) {
 			t.Fatalf("failed to decode jobs list: %v", err)
 		}
 
-		if len(jobs) != 0 {
-			t.Errorf("expected 0 jobs after deletion, got %d", len(jobs))
+		for _, job := range jobs {
+			if job.ID == created.ID {
+				t.Errorf("expected job ID %d to be deleted, but it was still found in the database", created.ID)
+			}
 		}
 	})
 
 	t.Run("returns 404 when job does not exist", func(t *testing.T) {
-		router := server.New()
-
-		req := httptest.NewRequest(http.MethodDelete, "/jobs/999", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/jobs/999999", nil)
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("expected status 404, got %d", rec.Code)
@@ -305,11 +318,9 @@ func TestDeleteJob(t *testing.T) {
 	})
 
 	t.Run("returns 400 for invalid job ID", func(t *testing.T) {
-		router := server.New()
-
 		req := httptest.NewRequest(http.MethodDelete, "/jobs/invalid-id", nil)
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, req)
+		handler.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("expected status 400, got %d", rec.Code)

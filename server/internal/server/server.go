@@ -1,30 +1,50 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
+
+	"github.com/JesstinSwadley/job-tracker/internal/database"
+
+	_ "modernc.org/sqlite"
 )
 
 type CreateJobRequest struct {
-	Company  string `json:"company"`
-	Position string `json:"position"`
-	Status   string `json:"status"`
+	Company         string `json:"company"`
+	Title           string `json:"title"`
+	Location        string `json:"location"`
+	WorkArrangement string `json:"work_arrangement"`
+	URL             string `json:"url"`
+	Stage           string `json:"stage"`
+	Status          string `json:"status"`
+	Notes           string `json:"notes"`
 }
 
 type UpdateJobRequest struct {
-	Company  string `json:"company"`
-	Position string `json:"position"`
-	Status   string `json:"status"`
+	Company         string `json:"company"`
+	Title           string `json:"title"`
+	Location        string `json:"location"`
+	WorkArrangement string `json:"work_arrangement"`
+	URL             string `json:"url"`
+	Stage           string `json:"stage"`
+	Status          string `json:"status"`
+	Notes           string `json:"notes"`
 }
 
 type JobResponse struct {
-	ID       int    `json:"id"`
-	Company  string `json:"company"`
-	Position string `json:"position"`
-	Status   string `json:"status"`
+	ID              int64  `json:"id"`
+	Company         string `json:"company"`
+	Title           string `json:"title"`
+	Location        string `json:"location"`
+	WorkArrangement string `json:"work_arrangement"`
+	URL             string `json:"url"`
+	Stage           string `json:"stage"`
+	Status          string `json:"status"`
+	Notes           string `json:"notes"`
 }
 
 type ErrorResponse struct {
@@ -32,38 +52,55 @@ type ErrorResponse struct {
 }
 
 type Server struct {
-	mu     sync.Mutex
-	nextID int
-	jobs   map[int]JobResponse
-	mux    *http.ServeMux
+	db      *sql.DB
+	queries *database.Queries
 }
 
-func New() *Server {
-	s := &Server{
-		nextID: 1,
-		jobs:   make(map[int]JobResponse),
-		mux:    http.NewServeMux(),
+func New(dbPath string) *Server {
+	db, err := sql.Open("sqlite", dbPath)
+
+	if err != nil {
+		log.Fatalf("failed to open database: %v", err)
 	}
 
-	s.routes()
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		log.Fatalf("failed to enable foreign keys: %v", err)
+	}
+
+	queries := database.New(db)
+
+	s := &Server{
+		db:      db,
+		queries: queries,
+	}
 
 	return s
 }
 
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+func (s *Server) RegisterRoutes() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health", s.handleHealth)
+
+	mux.HandleFunc("POST /jobs", s.handleCreateJob)
+	mux.HandleFunc("GET /jobs", s.handleGetJobs)
+	mux.HandleFunc("PUT /jobs/{id}", s.handleUpdateJob)
+	mux.HandleFunc("DELETE /jobs/{id}", s.handleDeleteJob)
+
+	return mux
 }
 
-func (s *Server) routes() {
-	s.mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
-
-	s.mux.HandleFunc("POST /jobs", s.handleCreateJob)
-	s.mux.HandleFunc("GET /jobs", s.handleGetJobs)
-	s.mux.HandleFunc("PUT /jobs/{id}", s.handleUpdateJob)
-	s.mux.HandleFunc("DELETE /jobs/{id}", s.handleDeleteJob)
+// handleHealth godoc
+// @Summary     Health Check
+// @Description Verify that the API server is up and running
+// @Tags        health
+// @Produce     plain
+// @Success     200 {string} string "OK"
+// @Router      /health [get]
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 // handleCreateJob godoc
@@ -75,42 +112,82 @@ func (s *Server) routes() {
 // @Param request body CreateJobRequest true "Job details"
 // @Success 201 {object} JobResponse
 // @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /jobs [post]
 func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	var req CreateJobRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error" : "invalid request body"}`, http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid request body"})
 		return
 	}
 
-	if strings.TrimSpace(req.Company) == "" || strings.TrimSpace(req.Position) == "" {
-		http.Error(w, `{"error":"company and position are required"}`, http.StatusBadRequest)
-
+	if strings.TrimSpace(req.Company) == "" || strings.TrimSpace(req.Title) == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "company and title are required"})
 		return
+	}
+
+	if req.Stage == "" {
+		req.Stage = "Search"
 	}
 
 	if req.Status == "" {
-		req.Status = "Applied"
+		req.Status = "Active"
 	}
 
-	s.mu.Lock()
-
-	newJob := JobResponse{
-		ID:       s.nextID,
-		Company:  req.Company,
-		Position: req.Position,
-		Status:   req.Status,
+	params := database.CreateJobParams{
+		Company: req.Company,
+		Title:   req.Title,
+		Location: sql.NullString{
+			String: req.Location,
+			Valid:  req.Location != "",
+		},
+		WorkArrangement: sql.NullString{
+			String: req.WorkArrangement,
+			Valid:  req.WorkArrangement != "",
+		},
+		Url: sql.NullString{
+			String: req.URL,
+			Valid:  req.URL != "",
+		},
+		Stage:  req.Stage,
+		Status: req.Status,
+		Notes: sql.NullString{
+			String: req.Notes,
+			Valid:  req.Notes != "",
+		},
 	}
 
-	s.jobs[s.nextID] = newJob
-	s.nextID++
+	job, err := s.queries.CreateJob(r.Context(), params)
 
-	s.mu.Unlock()
+	if err != nil {
+		log.Printf("failed to insert job: %v", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "failed to create job in database"})
+		return
+	}
+
+	res := JobResponse{
+		ID:              job.ID,
+		Company:         job.Company,
+		Title:           job.Title,
+		Location:        job.Location.String,
+		WorkArrangement: job.WorkArrangement.String,
+		URL:             job.Url.String,
+		Stage:           job.Stage,
+		Status:          job.Status,
+		Notes:           job.Notes.String,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(newJob)
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 // @Summary Get all jobs
@@ -118,23 +195,43 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 // @Tags jobs
 // @Produce json
 // @Success 200 {array} JobResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /jobs [get]
 func (s *Server) handleGetJobs(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	dbJobs, err := s.queries.ListJobs(r.Context())
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	if err != nil {
+		log.Printf("failed to list jobs: %v", err)
 
-	jobs := make([]JobResponse, 0, len(s.jobs))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "failed to retrieve jobs"})
+		return
+	}
 
-	for i := 1; i < s.nextID; i++ {
-		if job, exists := s.jobs[i]; exists {
-			jobs = append(jobs, job)
+	res := make([]JobResponse, len(dbJobs))
+
+	for i, job := range dbJobs {
+		res[i] = JobResponse{
+			ID:              job.ID,
+			Company:         job.Company,
+			Title:           job.Title,
+			Location:        job.Location.String,
+			WorkArrangement: job.WorkArrangement.String,
+			URL:             job.Url.String,
+			Stage:           job.Stage,
+			Status:          job.Status,
+			Notes:           job.Notes.String,
 		}
 	}
 
-	_ = json.NewEncoder(w).Encode(jobs)
+	if len(res) == 0 {
+		res = []JobResponse{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 // @Summary Update a job
@@ -145,17 +242,18 @@ func (s *Server) handleGetJobs(w http.ResponseWriter, r *http.Request) {
 // @Param id path int true "Job ID"
 // @Param job body UpdateJobRequest true "Update job data"
 // @Success 200 {object} JobResponse
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /jobs/{id} [put]
 func (s *Server) handleUpdateJob(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid job id"})
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid job id"})
 		return
 	}
 
@@ -164,43 +262,74 @@ func (s *Server) handleUpdateJob(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid request body"})
 		return
 	}
 
-	if req.Company == "" || req.Position == "" {
+	if strings.TrimSpace(req.Company) == "" || strings.TrimSpace(req.Title) == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "company and position are required"})
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "company and title are required"})
 		return
 	}
 
-	if req.Status == "" {
-		req.Status = "Applied"
-	}
+	existingJob, err := s.queries.GetJob(r.Context(), id)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.jobs[id]; !exists {
+	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "job not found"})
+
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "job not found"})
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "database error"})
+		}
+
 		return
 	}
 
-	updated := JobResponse{
-		ID:       id,
-		Company:  req.Company,
-		Position: req.Position,
-		Status:   req.Status,
+	params := database.UpdateJobParams{
+		ID:              id,
+		Company:         req.Company,
+		Title:           req.Title,
+		Location:        sql.NullString{String: req.Location, Valid: req.Location != ""},
+		WorkArrangement: sql.NullString{String: req.WorkArrangement, Valid: req.WorkArrangement != ""},
+		Url:             sql.NullString{String: req.URL, Valid: req.URL != ""},
+		Stage:           req.Stage,
+		Status:          req.Status,
+		Notes:           sql.NullString{String: req.Notes, Valid: req.Notes != ""},
+		DatePosted:      existingJob.DatePosted,
+		DateAssessed:    existingJob.DateAssessed,
+		DateApplied:     existingJob.DateApplied,
 	}
 
-	s.jobs[id] = updated
+	updatedJob, err := s.queries.UpdateJob(r.Context(), params)
+
+	if err != nil {
+		log.Printf("failed to update job: %v", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "failed to update job in database"})
+		return
+	}
+
+	res := JobResponse{
+		ID:              updatedJob.ID,
+		Company:         updatedJob.Company,
+		Title:           updatedJob.Title,
+		Location:        updatedJob.Location.String,
+		WorkArrangement: updatedJob.WorkArrangement.String,
+		URL:             updatedJob.Url.String,
+		Stage:           updatedJob.Stage,
+		Status:          updatedJob.Status,
+		Notes:           updatedJob.Notes.String,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(updated)
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 // @Summary Delete a job
@@ -208,31 +337,45 @@ func (s *Server) handleUpdateJob(w http.ResponseWriter, r *http.Request) {
 // @Tags jobs
 // @Param id path int true "Job ID"
 // @Success 204 "No Content"
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /jobs/{id} [delete]
 func (s *Server) handleDeleteJob(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid job id"})
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid job id"})
 		return
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Check if the job exists in SQLite
+	_, err = s.queries.GetJob(r.Context(), id)
 
-	if _, exists := s.jobs[id]; !exists {
+	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "job not found"})
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "job not found"})
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "database error"})
+		}
 		return
 	}
 
-	delete(s.jobs, id)
+	err = s.queries.DeleteJob(r.Context(), id)
+
+	if err != nil {
+		log.Printf("failed to delete job: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "failed to delete job in database"})
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
