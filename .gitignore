@@ -178,5 +178,8 @@ dist
 # Ignore all zip files
 *.zip
 
+# Ignore sqlite databases
+*.db
+
 # 
 *public/

@@ -15,6 +15,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/health": {
+            "get": {
+                "description": "Verify that the API server is up and running",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health Check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/jobs": {
             "get": {
                 "description": "Retrieve a list of all tracked jobs",
@@ -33,6 +53,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/server.JobResponse"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
                         }
                     }
                 }
@@ -69,6 +95,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/server.ErrorResponse"
                         }
@@ -117,19 +149,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/server.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
                         }
                     }
                 }
@@ -156,19 +188,123 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/server.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/{id}/assessment": {
+            "get": {
+                "description": "Retrieve the assessment details and score for a job",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assessments"
+                ],
+                "summary": "Get job assessment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.AssessmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Calculate weighted score and save assessment for a job",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assessments"
+                ],
+                "summary": "Save or update job assessment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assessment scores",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.AssessmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.AssessmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
                         }
                     }
                 }
@@ -176,16 +312,92 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "server.AssessmentRequest": {
+            "type": "object",
+            "properties": {
+                "career_alignment": {
+                    "type": "integer"
+                },
+                "compensation_score": {
+                    "type": "integer"
+                },
+                "experience_match": {
+                    "type": "integer"
+                },
+                "geographic_alignment": {
+                    "type": "integer"
+                },
+                "growth_value": {
+                    "type": "integer"
+                },
+                "technical_alignment": {
+                    "type": "integer"
+                },
+                "work_arrangement_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "server.AssessmentResponse": {
+            "type": "object",
+            "properties": {
+                "career_alignment": {
+                    "type": "integer"
+                },
+                "compensation_score": {
+                    "type": "integer"
+                },
+                "experience_match": {
+                    "type": "integer"
+                },
+                "geographic_alignment": {
+                    "type": "integer"
+                },
+                "growth_value": {
+                    "type": "integer"
+                },
+                "job_id": {
+                    "type": "integer"
+                },
+                "recommendation": {
+                    "type": "string"
+                },
+                "technical_alignment": {
+                    "type": "integer"
+                },
+                "total_score": {
+                    "type": "integer"
+                },
+                "work_arrangement_score": {
+                    "type": "integer"
+                }
+            }
+        },
         "server.CreateJobRequest": {
             "type": "object",
             "properties": {
                 "company": {
                     "type": "string"
                 },
-                "position": {
+                "location": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "stage": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "work_arrangement": {
                     "type": "string"
                 }
             }
@@ -208,10 +420,25 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "position": {
+                "location": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "stage": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "work_arrangement": {
                     "type": "string"
                 }
             }
@@ -222,10 +449,25 @@ const docTemplate = `{
                 "company": {
                     "type": "string"
                 },
-                "position": {
+                "location": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "stage": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "work_arrangement": {
                     "type": "string"
                 }
             }
@@ -235,7 +477,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.1",
+	Version:          "0.2",
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
