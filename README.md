@@ -1,5 +1,7 @@
 # Job Tracker
-A lightweight, fast job application tracker built with a product-first engineering mindset—starting with a minimal, zero-dependency Go backend and a React/Vite frontend, strictly driven by Test-Driven Development (TDD).
+A lightweight, high-performance job application tracker and decision engine built with a product-first engineering mindset. Designed to eliminate spreadsheet fatigue, it features a zero-dependency Go standard library backend, a local SQLite datastore managed via Goose and sqlc, and a React/Vite frontend developed strictly through Test-Driven Development (TDD).
+
+Beyond standard CRUD tracking, the application features a built-in **Opportunity Assessment Engine** that quantitatively scores job postings against a weighted 100-point rubric to generate actionable recommendations (`Apply - Priority`, `Apply - Target`, `Apply - Stretch`, or `Do Not Apply`).
 
 ## Tech Stack
 - **Backend:** Go 1.22+ (net/http standard library routing with method matching)
@@ -11,12 +13,11 @@ A lightweight, fast job application tracker built with a product-first engineeri
 - **Frontend Testing:** Vitest and *@testing-library/react*
 
 ## Features
-- **Persistent Storage**: Fully local, self-hosted SQLite database with automated schema migrations.
-- **Job Creation**: Submit new job applications with company, title, location, work arrangement, stage, status, and notes.
-- **Job Listing**: View tracked applications in descending order (newest first) with an empty-state fallback.
-- **Job Updates**: Edit existing application details with immediate UI sync and backend persistence.
-- **Job Deletion**: Remove tracked applications safely using a confirmation modal and complete backend removal.
-- **Interactive API Docs**: Auto-generated Swagger documentation and schema definitions.
+- **Persistent Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity.
+- **Job Lifecycle Management:** Track applications through pipeline stages (`Search`, `Applied`, `Interview 1`, etc.) and statuses (`Active`, `Interviewing`, `Rejected`, `Offer`) with rich metadata (work arrangement, salary/location, notes).
+- **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (up to 100 points) and automatically computes recommendation tiers.
+- **Modular Domain Architecture:** Decoupled Go architecture separating core server lifecycle, job pipeline management, and assessment calculation logic.
+- **Interactive API Docs:** Living OpenAPI 2.0 / Swagger documentation generated directly from Go annotations.
 
 ## Prerequisites
 - **Go:** 1.22 or higher
@@ -30,21 +31,28 @@ go install [github.com/sqlc-dev/sqlc/cmd/sqlc@latest](https://github.com/sqlc-de
 
 ## Project Structure
 ```Plaintext
-├── client/                 # React + Vite frontend
+├── client/                     # React + Vite frontend
 │   ├── src/
-│   │   ├── components/     # CreateJobForm, JobList, UpdateJobForm
-│   │   ├── App.tsx         # Main application container & API client
+│   │   ├── components/         # CreateJobForm, JobList, UpdateJobForm
+│   │   ├── App.tsx             # Main application container & API client
 │   │   └── ...
 │   └── vite.config.ts
-├── server/                 # Go backend
+├── server/                     # Go backend
 │   ├── cmd/
-│   │   └── main.go         # Entry point
-│   ├── docs/               # Auto-generated Swagger docs
+│   │   └── main.go             # Application entry point
+│   ├── docs/                   # Auto-generated Swagger documentation
 │   ├── internal/
-│   │   ├── database/       # sqlc generated code, SQL queries, and Goose migrations
-│   │   └── server/         # Mux, handlers, models, and server tests
-│   ├── sqlc.yaml           # sqlc configuration
-│   └── jobtracker.db       # SQLite database (generated at runtime)
+│   │   ├── database/           # sqlc queries, generated Go models, and Goose migrations
+│   │   │   ├── migrations/
+│   │   │   └── queries/
+│   │   └── server/             # Modular HTTP handlers & TDD test suites
+│   │       ├── server.go       # Server initialization, mux, and health check
+│   │       ├── jobs.go         # Job CRUD handlers, DTOs, and lifecycle logic
+│   │       ├── assessments.go  # Assessment handlers, DTOs, and scoring engine
+│   │       ├── server_test.go  # Job CRUD integration test suite
+│   │       └── assessment_test.go # Assessment scoring & cascade test suite
+│   ├── sqlc.yaml               # sqlc configuration
+│   └── jobtracker.db           # SQLite database file (created on migration)
 └── README.md
 ```
 
@@ -94,13 +102,32 @@ npm test -- --run
 
 ## API Specification
 ### Endpoints
-|  Method   |  Endpoint    |  Description                   | Status Codes    |
-|  -------- |  ----------- |  ----------------------------  | --------------  |
-|  GET      |  /health     |  Server health check           |  200            |
-|  GET      |  /jobs       |  Retrieve all tracked jobs     |  200, 500       | 
-|  POST     |  /jobs       |  Create a new job appliaction  |  201, 400, 500  |
-|  PUT      |  /jobs/{id}  |  Update job details or status  |  200, 400, 404  |
-|  DELETE   |  /jobs/{id}  |  Delete a tracked job          |  204, 400, 404  |
+|  Method   |  Endpoint               |  Description                                           | Status Codes         |
+|  -------- |  ---------------------- |  ----------------------------------------------------  | -------------------  |
+|  GET      |  /health                |  Server health check                                   |  200                 |
+|  GET      |  /jobs                  |  Retrieve all tracked jobs                             |  200, 500            | 
+|  POST     |  /jobs                  |  Create a new job appliaction                          |  201, 400, 500       |
+|  PUT      |  /jobs/{id}             |  Update job details or status                          |  200, 400, 404, 500  |
+|  DELETE   |  /jobs/{id}             |  Delete a tracked job                                  |  204, 400, 404, 500  |
+|  GET      |  /jobs/{id}/assessment  |  Retrieve score and recommendation for a job           |  200, 400, 404, 500  |
+|  PUT      |  /jobs/{id}/assessment  |  Upsert scores, compute total, and set recommendation  |  200, 400, 404, 500  |
+
+## Assessment Scoring Rubric
+|  Category              |  Max Score   |  Description                                           |
+|  --------------------  |  ----------- |  ----------------------------------------------------  | 
+|  Career Alignment      |  25          |  Alignment with long-term professional trajectory      |
+|  Experience Match      |	20	        |  Match between candidate background and role scope     |
+|  Technical Alignment   |	15	        |  Tech stack overlap and tool familiarity               |
+|  Compensation Score    |	15	        |  Competitiveness vs. target market rate                |
+|  Work Arrangement      |	10	        |  Remote / Hybrid / Onsite fit                          |
+|  Geographic Alignment  |	5	        |  Time zone or office commute feasibility               |
+|  Growth Value          | 10	        |  Upskill potential and team mentorship                 |
+
+### Recommendation Thresholds
+- 85 – 100: Apply - Priority (Immediate priority; submit application promptly)
+- 75 – 84: Apply - Target (Solid match within target ballpark; apply when ready)
+- 50 – 74: Apply - Stretch (Moderate overlap with on-the-job learning curve)
+- < 50: Do Not Apply (Below qualification threshold)
 
 ### Regenerating Backend Code
 If you modify SQL queries in internal/database/queries:
