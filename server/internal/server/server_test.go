@@ -6,13 +6,26 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/JesstinSwadley/job-tracker/internal/server"
 )
 
+func setupTestServer(t *testing.T) *server.Server {
+	t.Helper()
+
+	dbPath := os.Getenv("TEST_DB_PATH")
+
+	if dbPath == "" {
+		dbPath = "../../jobtracker_test.db"
+	}
+
+	return server.New(dbPath)
+}
+
 func TestHealthCheck(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := setupTestServer(t)
 	router := app.RegisterRoutes()
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -30,7 +43,7 @@ func TestHealthCheck(t *testing.T) {
 }
 
 func TestCreateJob(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := setupTestServer(t)
 	handler := app.RegisterRoutes()
 
 	tests := []struct {
@@ -107,7 +120,7 @@ func TestCreateJob(t *testing.T) {
 }
 
 func TestGetJobs(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := setupTestServer(t)
 	handler := app.RegisterRoutes()
 
 	t.Run("returns a valid JSON array of jobs", func(t *testing.T) {
@@ -178,7 +191,7 @@ func TestGetJobs(t *testing.T) {
 }
 
 func TestUpdateJob(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := setupTestServer(t)
 	handler := app.RegisterRoutes()
 
 	t.Run("successfully updates an existing job", func(t *testing.T) {
@@ -263,7 +276,7 @@ func TestUpdateJob(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := setupTestServer(t)
 	handler := app.RegisterRoutes()
 
 	t.Run("successfully deletes an existing job", func(t *testing.T) {

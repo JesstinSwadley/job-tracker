@@ -12,7 +12,7 @@ import (
 )
 
 func TestJobAssessment(t *testing.T) {
-	app := server.New("../../jobtracker.db")
+	app := server.New("../../jobtracker_test.db")
 	handler := app.RegisterRoutes()
 
 	seedJob := func() server.JobResponse {
