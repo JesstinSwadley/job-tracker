@@ -4,19 +4,21 @@ A lightweight, high-performance job application tracker and decision engine buil
 Beyond standard CRUD tracking, the application features a built-in **Opportunity Assessment Engine** that quantitatively scores job postings against a weighted 100-point rubric to generate actionable recommendations (`Apply - Priority`, `Apply - Target`, `Apply - Stretch`, or `Do Not Apply`).
 
 ## Tech Stack
-- **Backend:** Go 1.22+ (net/http standard library routing with method matching)
-- **Database:** SQLite (CGO-free via `modernc.org/sqlite`)
+- **Backend:** Go 1.22+ (`net/http` standard library routing with method matching)
+- **Database:** SQLite (CGO-free via `modernc.org/sqlite`, WAL mode, foreign key enforcement)
 - **Data Tooling:** Goose (schema migrations) and sqlc (type-safe SQL-to-Go generation)
-- **API Documentation:** Swagger / OpenAPI 2.0 via *swag*
-- **Backend Testing:** Go standard library *testing* and *net/http/httptest*
-- **Frontend:** React 18+, Typescript, Vite
-- **Frontend Testing:** Vitest and *@testing-library/react*
+- **API Documentation:** Swagger / OpenAPI 2.0 via `swag`
+- **Backend Testing:** Go standard library `testing` and `net/http/httptest`
+- **Frontend:** React 18+, TypeScript, Vite
+- **Frontend Testing:** Vitest and `@testing-library/react`
+- **Automation:** GNU Make
 
 ## Features
 - **Persistent Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity.
 - **Job Lifecycle Management:** Track applications through pipeline stages (`Search`, `Applied`, `Interview 1`, etc.) and statuses (`Active`, `Interviewing`, `Rejected`, `Offer`) with rich metadata (work arrangement, salary/location, notes).
 - **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (up to 100 points) and automatically computes recommendation tiers.
 - **Modular Domain Architecture:** Decoupled Go architecture separating core server lifecycle, job pipeline management, and assessment calculation logic.
+- **Isolated Testing Pipeline:** Automated migrations run against an isolated test database (`jobtracker_test.db`), leaving active tracking data intact.
 - **Interactive API Docs:** Living OpenAPI 2.0 / Swagger documentation generated directly from Go annotations.
 
 ## Prerequisites
@@ -52,52 +54,82 @@ go install [github.com/sqlc-dev/sqlc/cmd/sqlc@latest](https://github.com/sqlc-de
 │   │       ├── server_test.go  # Job CRUD integration test suite
 │   │       └── assessment_test.go # Assessment scoring & cascade test suite
 │   ├── sqlc.yaml               # sqlc configuration
-│   └── jobtracker.db           # SQLite database file (created on migration)
+│   ├── jobtracker.db           # SQLite development database
+│   └── jobtracker_test.db      # SQLite isolated test database
+├── Makefile                    # Root automation for dev, test, and migration tasks
 └── README.md
 ```
 
 ## Getting Started
 ### 1. Initialize the Database
-Before running the backend, apply the schema migrations to create the SQLite database:
+Apply migrations to create or update the local development database:
+```Bash
+make migrate-up
+```
+
+*Manual equivalent: (from project root)*
 ```Bash
 cd server
-goose -dir internal/database/migrations sqlite3 ./jobtracker.db up
+goose -dir server/internal/database/migrations sqlite3 server/jobtracker.db up
 ```
 
 ### 2. Run the Backend
-From the server directory:
+Start the Go API server:
+```Bash
+make dev-server
+```
+
+*Manual equivalent:*
 ```Bash
 go run ./cmd/main.go
+```
+
+The server starts on http://localhost:8080. You can override the database path at runtime via -db flag or DB_PATH environment variable:
+```Bash
+go run ./cmd/main.go -db=/custom/path/jobtracker.db
 ```
 The server starts on *http://localhost:8080*
 
 ### 3. Run the Frontend
 In a separate terminal:
 ```Bash
+make dev-client
+```
+
+*Manual equivalent:*
+```Bash
 cd client
 npm install
 npm run dev
 ```
-Open *http://localhost:5173* in a browser to acccess the application
+Open *http://localhost:5173* in a browser to access the application
 
 ## Running Test
+### All Suites (Backend + Frontend)
+```Bash
+make test
+```
+
 ### Backend Go
 Runs unit and integration tests across all packages
 ```Bash
-cd server
-go test -v ./...
+make test-backend
+```
+
+Manual equivalent:
+```Bash
+cd server && TEST_DB_PATH="$(pwd)/jobtracker_test.db" go test -v ./...
 ```
 
 ### Frontend (Vitest)
-Runs component test suites in watch mode:
+Runs component test suites once (CI mode):
 ```Bash
-cd client
-npm test
+make test-frontend
 ```
 
-To run once with coverage:
+Runs component test suites in interactive watch mode:
 ```Bash
-npm test -- --run
+make test-frontend-watch
 ```
 
 ## API Specification
