@@ -5,7 +5,6 @@ import type { UpdateJobInput } from './components/UpdateJobForm'
 import UpdateJobForm from './components/UpdateJobForm'
 import DeleteJobModal from './components/DeleteJobModal'
 
-
 const App = () => {
 	const [jobs, setJobs] = useState<Job[]>([])
 	const [loading, setLoading] = useState(true)
@@ -20,7 +19,7 @@ const App = () => {
 			})
 
 			if (!res.ok) {
-				throw new Error('failed to fetch jobs')
+				throw new Error('Failed to fetch jobs')
 			}
 
 			const data: Job[] = await res.json()
@@ -47,13 +46,14 @@ const App = () => {
 			})
 
 			if (!res.ok) {
-				const errData = await res.json()
+				const errData = await res.json().catch(() => ({}))
 				throw new Error(errData.error || 'Failed to create job')
 			}
 
 			const newJob: Job = await res.json()
 			
-			setJobs((prev) => [...prev, newJob])
+			// Prepend so the newest job appears immediately at the top
+			setJobs((prev) => [newJob, ...prev])
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'An error occurred')
 		}
@@ -76,8 +76,7 @@ const App = () => {
 			})
 
 			if (!res.ok) {
-				const errData = await res.json()
-				
+				const errData = await res.json().catch(() => ({}))
 				throw new Error(errData.error || 'Failed to update job')
 			}
 
@@ -89,12 +88,12 @@ const App = () => {
 
 			setEditingJob(null)
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'An error occured')
+			setError(err instanceof Error ? err.message : 'An error occurred')
 		}
 	}
 
 	const handleDeleteJob = async (id: number) => {
-		setError(null) 
+		setError(null)
 
 		try {
 			const res = await fetch(`/jobs/${id}`, {
@@ -102,51 +101,49 @@ const App = () => {
 			})
 
 			if (!res.ok) {
-				const errData = await res.json()
-
-				throw new Error(errData.error || 'Failed to update job')
+				const errData = await res.json().catch(() => ({}))
+				throw new Error(errData.error || 'Failed to delete job')
 			}
 
 			setJobs((prev) => prev.filter((j) => j.id !== id))
 			setDeletingJob(null)
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'An error occured')
+			setError(err instanceof Error ? err.message : 'An error occurred')
 		}
 	}
 
 	return (
-		<main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '600px' }}>
+		<main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
 			<h1>Job Tracker</h1>
 
 			{editingJob ? (
 				<section>
 					<h2>Edit Job</h2>
-
 					<UpdateJobForm
 						job={editingJob}
 						onSubmit={handleUpdateJob}
-						onCancel={() => setEditingJob(null)} />
+						onCancel={() => setEditingJob(null)}
+					/>
 				</section>
 			) : (
 				<section>
 					<h2>Add New Job</h2>
-
-					<CreateJobForm 
-						onSubmit={handleCreateJob} />
+					<CreateJobForm onSubmit={handleCreateJob} />
 				</section>
 			)}
 
-			{error && <p style={{ color: 'red' }}>Error: {error}</p>}
+			{error && <p style={{ color: '#dc2626', marginTop: '1rem' }}>Error: {error}</p>}
 
-			<section style={{ marginTop: '2rem' }}>
-				<h2>Tracked Job Applications</h2>
+			<section style={{ marginTop: '2.5rem' }}>
+				<h2>Tracked Applications ({jobs.length})</h2>
 				{loading ? (
-					<p>Loading Jobs...</p>
+					<p>Loading jobs...</p>
 				) : (
 					<JobList
 						jobs={jobs}
 						onEdit={setEditingJob}
-						onDelete={setDeletingJob} />
+						onDelete={setDeletingJob}
+					/>
 				)}
 			</section>
 
@@ -154,7 +151,8 @@ const App = () => {
 				<DeleteJobModal 
 					job={deletingJob}
 					onConfirm={handleDeleteJob}
-					onCancel={() => setDeletingJob(null)} />
+					onCancel={() => setDeletingJob(null)}
+				/>
 			)}
 		</main>
 	)

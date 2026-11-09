@@ -3,8 +3,13 @@ import React from 'react'
 export interface Job {
 	id: number
 	company: string
-	position: string
+	title: string
+	location?: string
+	work_arrangement?: string
+	url?: string
+	stage: string
 	status: string
+	notes?: string
 }
 
 interface JobListProps {
@@ -25,37 +30,64 @@ const JobList = ({ jobs, onEdit, onDelete }: JobListProps) => {
 					key={job.id}
 					style={{
 						display: 'flex',
-						alignItems: 'center',
+						alignItems: 'flex-start',
 						justifyContent: 'space-between',
-						padding: '0.5rem 0',
+						padding: '0.75rem 0',
 						borderBottom: '1px solid #eee'
-					}}>
-						<div>qc
-							<strong>{job.company}</strong> - <span>{job.position}</span> [{job.status}]
+					}}
+				>
+					<div>
+						<div>
+							<strong>{job.company}</strong> — <span>{job.title}</span>
 						</div>
-					
-						<div
-							style={{ 
-								display: 'flex',
-								gap: '0.5rem'
-							}}>
-								{onEdit && (
-									<button
-										type='button'
-										onClick={() => onEdit(job)}>
-											Edit
-									</button>
-								)}
 
-								{onDelete && (
-									<button
-										type='button'
-										onClick={() => onDelete(job)}
-										style={{ color: '#dc2626'}}>
-											Delete
-									</button>
-								)}
+						<div
+							style={{
+								fontSize: '0.875rem',
+								color: '#555',
+								marginTop: '0.25rem'
+							}}
+						>
+							<span>Stage: {job.stage}</span> | <span>Status: {job.status}</span>
+							{job.work_arrangement && <span> | {job.work_arrangement}</span>}
+							{job.location && <span> ({job.location})</span>}
 						</div>
+
+						{job.url && (
+							<div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+								<a href={job.url} target="_blank" rel="noreferrer">
+									View Posting
+								</a>
+							</div>
+						)}
+
+						{job.notes && (
+							<p style={{ fontSize: '0.875rem', color: '#444', margin: '0.25rem 0 0 0' }}>
+								{job.notes}
+							</p>
+						)}
+					</div>
+
+					<div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+						{onEdit && (
+							<button
+								type="button"
+								onClick={() => onEdit(job)}
+							>
+								Edit
+							</button>
+						)}
+
+						{onDelete && (
+							<button
+								type="button"
+								onClick={() => onDelete(job)}
+								style={{ color: '#dc2626' }}
+							>
+								Delete
+							</button>
+						)}
+					</div>
 				</li>
 			))}
 		</ul>
