@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import CreateJobForm, { type CreateJobInput } from './components/CreateJobForm'
-import JobList, { type Job } from './components/JobList'
-import type { UpdateJobInput } from './components/UpdateJobForm'
-import UpdateJobForm from './components/UpdateJobForm'
-import DeleteJobModal from './components/DeleteJobModal'
+import CreateJobForm, { type CreateJobInput } from './components/jobs/CreateJobForm'
+import JobList, { type Job } from './components/jobs/JobList'
+import UpdateJobForm, { type UpdateJobInput } from './components/jobs/UpdateJobForm'
+import DeleteJobModal from './components/jobs/DeleteJobModal'
 
 const App = () => {
 	const [jobs, setJobs] = useState<Job[]>([])
