@@ -6,58 +6,64 @@ export interface AssessmentBadgeProps {
 	onClick?: () => void
 }
 
-function getBadgeColors(recommendation: string): { bg: string; text: string; border: string } {
+function getBadgeClasses(recommendation: string, isClickable: boolean): string {
+	const base =
+		'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-colors leading-tight'
+
+	let colorClasses = ''
 	switch (recommendation) {
 		case 'Apply - Priority':
-			return { bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' }
+			colorClasses = isClickable
+				? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+				: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+			break
 		case 'Apply - Target':
-			return { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' }
+			colorClasses = isClickable
+				? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+				: 'bg-blue-50 text-blue-700 border-blue-200'
+			break
 		case 'Apply - Stretch':
-			return { bg: '#fffbeb', text: '#92400e', border: '#fde68a' }
+			colorClasses = isClickable
+				? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+				: 'bg-amber-50 text-amber-700 border-amber-200'
+			break
 		case 'Do Not Apply':
 		default:
-			return { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' }
+			colorClasses = isClickable
+				? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300'
+				: 'bg-rose-50 text-rose-700 border-rose-200'
+			break
 	}
+
+	const interactiveClasses = isClickable
+		? 'cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-slate-400'
+		: 'cursor-default'
+
+	return `${base} ${colorClasses} ${interactiveClasses}`
 }
 
 const AssessmentBadge = ({ totalScore, recommendation, onClick }: AssessmentBadgeProps) => {
-	const { bg, text, border } = getBadgeColors(recommendation)
-
-	const style: React.CSSProperties = {
-		display: 'inline-flex',
-		alignItems: 'center',
-		gap: '0.4rem',
-		padding: '0.2rem 0.5rem',
-		borderRadius: '9999px',
-		fontSize: '0.75rem',
-		fontWeight: 600,
-		backgroundColor: bg,
-		color: text,
-		border: `1px solid ${border}`,
-		cursor: onClick ? 'pointer' : 'default',
-		textDecoration: 'none',
-		lineHeight: 1
-	}
+	const classes = getBadgeClasses(recommendation, Boolean(onClick))
 
 	if (onClick) {
 		return (
 			<button
 				type="button"
 				onClick={onClick}
-				style={{ ...style, background: bg, border: `1px solid ${border}` }}
+				className={classes}
 				title="Click to view or edit assessment"
 			>
 				<span>{totalScore} / 100</span>
-				<span>•</span>
+				<span aria-hidden="true" className="opacity-50">•</span>
 				<span>{recommendation}</span>
 			</button>
 		)
 	}
 
 	return (
-		<span style={style}>
+		<span className={classes}>
 			<span>{totalScore} / 100</span>
-			<span>•</span>
+			<span aria-hidden="true" className="opacity-50">•</span>
 			<span>{recommendation}</span>
 		</span>
 	)

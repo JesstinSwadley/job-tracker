@@ -39,7 +39,7 @@ describe('AssessmentModal', () => {
 			experience_match: 15,
 			technical_alignment: 12,
 			compensation_score: 10,
-			work_arrangement: 8,
+			work_arrangement_score: 8,
 			geographic_alignment: 4,
 			growth_value: 8
 		}
@@ -85,7 +85,7 @@ describe('AssessmentModal', () => {
 			experience_match: 0,
 			technical_alignment: 14,
 			compensation_score: 0,
-			work_arrangement: 0,
+			work_arrangement_score: 0,
 			geographic_alignment: 0,
 			growth_value: 0
 		})
