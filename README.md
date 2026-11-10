@@ -9,17 +9,20 @@ Beyond standard CRUD tracking, the application features a built-in **Opportunity
 - **Data Tooling:** Goose (schema migrations) and sqlc (type-safe SQL-to-Go generation)
 - **API Documentation:** Swagger / OpenAPI 2.0 via `swag`
 - **Backend Testing:** Go standard library `testing` and `net/http/httptest`
-- **Frontend:** React 18+, TypeScript, Vite
-- **Frontend Testing:** Vitest and `@testing-library/react`
+- **Frontend:** React 19, TypeScript, Vite
+- **Styling:** Tailwind CSS v4 (via `@tailwindcss/vite`)
+- **Frontend Testing:** Vitest, `happy-dom`, and `@testing-library/react` (sub-second execution, zero `jest-dom` bloat)
 - **Automation:** GNU Make
 
 ## Features
-- **Persistent Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity.
-- **Job Lifecycle Management:** Track applications through pipeline stages (`Search`, `Applied`, `Interview 1`, etc.) and statuses (`Active`, `Interviewing`, `Rejected`, `Offer`) with rich metadata (work arrangement, salary/location, notes).
-- **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (up to 100 points) and automatically computes recommendation tiers.
-- **Modular Domain Architecture:** Decoupled Go architecture separating core server lifecycle, job pipeline management, and assessment calculation logic.
-- **Isolated Testing Pipeline:** Automated migrations run against an isolated test database (`jobtracker_test.db`), leaving active tracking data intact.
-- **Interactive API Docs:** Living OpenAPI 2.0 / Swagger documentation generated directly from Go annotations.
+- **Persistent Relational Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity (`ON DELETE CASCADE` for assessments).
+- **Full Lifecycle Pipeline:** Track applications across pipeline stages (`Search`, `Applied`, `Screening`, `Interview 1`, `Interview 2`, `Final Round`, `Offer`, `Archived`) and statuses (`Active`, `Interviewing`, `Rejected`, `Offer`, `Withdrawn`).
+- **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (totaling 100 points) with a live-updating score meter, automated recommendation tiers, and interactive summary badges.
+- **Search & Status Filtering:** Filter applications on the fly by status tabs or execute real-time substring searches across company names, job titles, and locations.
+- **Metric Summaries:** Instant dashboard counters tracking total tracked roles, in-flight interviews, and high-priority opportunities.
+- **Destructive Action Confirmation:** Accessible confirmation dialog safeguard preventing accidental application deletions.
+- **Strict TDD & Modular Architecture:** Comprehensive test coverage with separate domain directories (`jobs/` and `assessments/`), guaranteeing rapid sub-second test runs across both frontend and backend suites.
+- **Interactive API Documentation:** Living OpenAPI 2.0 / Swagger documentation generated directly from Go annotations.
 
 ## Prerequisites
 - **Go:** 1.22 or higher
@@ -35,10 +38,16 @@ go install [github.com/sqlc-dev/sqlc/cmd/sqlc@latest](https://github.com/sqlc-de
 ```Plaintext
 ├── client/                     # React + Vite frontend
 │   ├── src/
-│   │   ├── components/         # CreateJobForm, JobList, UpdateJobForm
-│   │   ├── App.tsx             # Main application container & API client
-│   │   └── ...
-│   └── vite.config.ts
+│   │   ├── components/
+│   │   │   ├── assessments/    # AssessmentBadge, AssessmentModal & test suites
+│   │   │   └── jobs/           # CreateJobForm, JobList, UpdateJobForm, DeleteJobModal & tests
+│   │   ├── App.tsx             # Main dashboard, filter pipeline, & API client
+│   │   ├── index.css           # Tailwind CSS v4 root import
+│   │   ├── main.tsx            # React application root
+│   │   └── setupTests.ts       # Test environment configuration
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.ts          # Vite configuration with @tailwindcss/vite & Vitest happy-dom
 ├── server/                     # Go backend
 │   ├── cmd/
 │   │   └── main.go             # Application entry point
