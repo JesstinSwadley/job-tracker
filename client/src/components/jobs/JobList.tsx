@@ -1,4 +1,10 @@
 import React from 'react'
+import AssessmentBadge from '../assessments/AssessmentBadge'
+
+export interface JobAssessmentSummary {
+	total_score: number
+	recommendation: string
+}
 
 export interface Job {
 	id: number
@@ -10,15 +16,17 @@ export interface Job {
 	stage: string
 	status: string
 	notes?: string
+	assessment?: JobAssessmentSummary | null
 }
 
 interface JobListProps {
 	jobs: Job[]
 	onEdit?: (job: Job) => void
 	onDelete?: (job: Job) => void
+	onAssess?: (job: Job) => void
 }
 
-const JobList = ({ jobs, onEdit, onDelete }: JobListProps) => {
+const JobList = ({ jobs, onEdit, onDelete, onAssess }: JobListProps) => {
 	if (jobs.length === 0) {
 		return <p>No jobs tracked yet.</p>
 	}
@@ -32,20 +40,27 @@ const JobList = ({ jobs, onEdit, onDelete }: JobListProps) => {
 						display: 'flex',
 						alignItems: 'flex-start',
 						justifyContent: 'space-between',
-						padding: '0.75rem 0',
+						padding: '0.85rem 0',
 						borderBottom: '1px solid #eee'
 					}}
 				>
 					<div>
-						<div>
+						<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
 							<strong>{job.company}</strong> — <span>{job.title}</span>
+							{job.assessment && (
+								<AssessmentBadge
+									totalScore={job.assessment.total_score}
+									recommendation={job.assessment.recommendation}
+									onClick={onAssess ? () => onAssess(job) : undefined}
+								/>
+							)}
 						</div>
 
 						<div
 							style={{
 								fontSize: '0.875rem',
 								color: '#555',
-								marginTop: '0.25rem'
+								marginTop: '0.35rem'
 							}}
 						>
 							<span>Stage: {job.stage}</span> | <span>Status: {job.status}</span>
@@ -68,7 +83,16 @@ const JobList = ({ jobs, onEdit, onDelete }: JobListProps) => {
 						)}
 					</div>
 
-					<div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+					<div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem', flexShrink: 0 }}>
+						{onAssess && (
+							<button
+								type="button"
+								onClick={() => onAssess(job)}
+							>
+								{job.assessment ? 'Re-assess' : 'Assess'}
+							</button>
+						)}
+
 						{onEdit && (
 							<button
 								type="button"
