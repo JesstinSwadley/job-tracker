@@ -16,27 +16,45 @@ INSERT INTO jobs (
 	title,
 	location,
 	work_arrangement,
+	source,
+	application_platform,
 	url,
 	stage,
+	interview_round,
 	status,
 	date_posted,
+	date_found,
+	date_assessed,
+	date_applied,
+	resume_url,
+	cover_letter_url,
 	notes
 ) VALUES (
-	?, ?, ?, ?, ?, ?, ?, ?, ?
+	?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+	COALESCE(?, CURRENT_TIMESTAMP),
+	?, ?, ?, ?, ?
 )
-RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at
+RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at, source, application_platform, interview_round, resume_url, cover_letter_url
 `
 
 type CreateJobParams struct {
-	Company         string         `json:"company"`
-	Title           string         `json:"title"`
-	Location        sql.NullString `json:"location"`
-	WorkArrangement sql.NullString `json:"work_arrangement"`
-	Url             sql.NullString `json:"url"`
-	Stage           string         `json:"stage"`
-	Status          string         `json:"status"`
-	DatePosted      sql.NullTime   `json:"date_posted"`
-	Notes           sql.NullString `json:"notes"`
+	Company             string         `json:"company"`
+	Title               string         `json:"title"`
+	Location            sql.NullString `json:"location"`
+	WorkArrangement     sql.NullString `json:"work_arrangement"`
+	Source              sql.NullString `json:"source"`
+	ApplicationPlatform sql.NullString `json:"application_platform"`
+	Url                 sql.NullString `json:"url"`
+	Stage               string         `json:"stage"`
+	InterviewRound      sql.NullInt64  `json:"interview_round"`
+	Status              string         `json:"status"`
+	DatePosted          sql.NullTime   `json:"date_posted"`
+	Column12            interface{}    `json:"column_12"`
+	DateAssessed        sql.NullTime   `json:"date_assessed"`
+	DateApplied         sql.NullTime   `json:"date_applied"`
+	ResumeUrl           sql.NullString `json:"resume_url"`
+	CoverLetterUrl      sql.NullString `json:"cover_letter_url"`
+	Notes               sql.NullString `json:"notes"`
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (Job, error) {
@@ -45,10 +63,18 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (Job, erro
 		arg.Title,
 		arg.Location,
 		arg.WorkArrangement,
+		arg.Source,
+		arg.ApplicationPlatform,
 		arg.Url,
 		arg.Stage,
+		arg.InterviewRound,
 		arg.Status,
 		arg.DatePosted,
+		arg.Column12,
+		arg.DateAssessed,
+		arg.DateApplied,
+		arg.ResumeUrl,
+		arg.CoverLetterUrl,
 		arg.Notes,
 	)
 	var i Job
@@ -68,35 +94,79 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (Job, erro
 		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Source,
+		&i.ApplicationPlatform,
+		&i.InterviewRound,
+		&i.ResumeUrl,
+		&i.CoverLetterUrl,
+	)
+	return i, err
+}
+
+const createJobNote = `-- name: CreateJobNote :one
+INSERT INTO job_notes (
+	job_id,
+	section,
+	interview_round,
+	content
+) VALUES (
+	?, ?, ?, ?
+)
+RETURNING id, job_id, section, interview_round, content, created_at, updated_at
+`
+
+type CreateJobNoteParams struct {
+	JobID          int64         `json:"job_id"`
+	Section        string        `json:"section"`
+	InterviewRound sql.NullInt64 `json:"interview_round"`
+	Content        string        `json:"content"`
+}
+
+func (q *Queries) CreateJobNote(ctx context.Context, arg CreateJobNoteParams) (JobNote, error) {
+	row := q.db.QueryRowContext(ctx, createJobNote,
+		arg.JobID,
+		arg.Section,
+		arg.InterviewRound,
+		arg.Content,
+	)
+	var i JobNote
+	err := row.Scan(
+		&i.ID,
+		&i.JobID,
+		&i.Section,
+		&i.InterviewRound,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const createOrUpdateAssessment = `-- name: CreateOrUpdateAssessment :exec
 INSERT INTO job_assessments (
-    job_id, 
-	career_alignment, 
-	experience_match, 
-	technical_alignment, 
-    compensation_score, 
-	work_arrangement_score, 
-	geographic_alignment, 
-    growth_value, 
-	total_score, 
+	job_id,
+	career_alignment,
+	experience_match,
+	technical_alignment,
+	compensation_score,
+	work_arrangement_score,
+	geographic_alignment,
+	growth_value,
+	total_score,
 	recommendation
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+	?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(job_id) DO UPDATE SET
-    career_alignment = excluded.career_alignment,
-    experience_match = excluded.experience_match,
-    technical_alignment = excluded.technical_alignment,
-    compensation_score = excluded.compensation_score,
-    work_arrangement_score = excluded.work_arrangement_score,
-    geographic_alignment = excluded.geographic_alignment,
-    growth_value = excluded.growth_value,
-    total_score = excluded.total_score,
-    recommendation = excluded.recommendation
+	career_alignment = excluded.career_alignment,
+	experience_match = excluded.experience_match,
+	technical_alignment = excluded.technical_alignment,
+	compensation_score = excluded.compensation_score,
+	work_arrangement_score = excluded.work_arrangement_score,
+	geographic_alignment = excluded.geographic_alignment,
+	growth_value = excluded.growth_value,
+	total_score = excluded.total_score,
+	recommendation = excluded.recommendation
 `
 
 type CreateOrUpdateAssessmentParams struct {
@@ -138,6 +208,21 @@ func (q *Queries) DeleteJob(ctx context.Context, id int64) error {
 	return err
 }
 
+const deleteJobNote = `-- name: DeleteJobNote :exec
+DELETE FROM job_notes
+WHERE id = ? AND job_id = ?
+`
+
+type DeleteJobNoteParams struct {
+	ID    int64 `json:"id"`
+	JobID int64 `json:"job_id"`
+}
+
+func (q *Queries) DeleteJobNote(ctx context.Context, arg DeleteJobNoteParams) error {
+	_, err := q.db.ExecContext(ctx, deleteJobNote, arg.ID, arg.JobID)
+	return err
+}
+
 const getAssessmentByJobID = `-- name: GetAssessmentByJobID :one
 SELECT job_id, career_alignment, experience_match, technical_alignment, compensation_score, work_arrangement_score, geographic_alignment, growth_value, total_score, recommendation FROM job_assessments
 WHERE job_id = ? LIMIT 1
@@ -162,13 +247,45 @@ func (q *Queries) GetAssessmentByJobID(ctx context.Context, jobID int64) (JobAss
 }
 
 const getJob = `-- name: GetJob :one
-SELECT id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at FROM jobs
-WHERE id = ? LIMIT 1
+SELECT
+	j.id, j.company, j.title, j.location, j.work_arrangement, j.url, j.stage, j.status, j.date_posted, j.date_found, j.date_assessed, j.date_applied, j.notes, j.created_at, j.updated_at, j.source, j.application_platform, j.interview_round, j.resume_url, j.cover_letter_url,
+	ja.total_score AS assessment_total_score,
+	ja.recommendation AS assessment_recommendation,
+	(SELECT COUNT(*) FROM job_notes jn WHERE jn.job_id = j.id) AS notes_count
+FROM jobs j
+LEFT JOIN job_assessments ja ON j.id = ja.job_id
+WHERE j.id = ? LIMIT 1
 `
 
-func (q *Queries) GetJob(ctx context.Context, id int64) (Job, error) {
+type GetJobRow struct {
+	ID                       int64          `json:"id"`
+	Company                  string         `json:"company"`
+	Title                    string         `json:"title"`
+	Location                 sql.NullString `json:"location"`
+	WorkArrangement          sql.NullString `json:"work_arrangement"`
+	Url                      sql.NullString `json:"url"`
+	Stage                    string         `json:"stage"`
+	Status                   string         `json:"status"`
+	DatePosted               sql.NullTime   `json:"date_posted"`
+	DateFound                sql.NullTime   `json:"date_found"`
+	DateAssessed             sql.NullTime   `json:"date_assessed"`
+	DateApplied              sql.NullTime   `json:"date_applied"`
+	Notes                    sql.NullString `json:"notes"`
+	CreatedAt                sql.NullTime   `json:"created_at"`
+	UpdatedAt                sql.NullTime   `json:"updated_at"`
+	Source                   sql.NullString `json:"source"`
+	ApplicationPlatform      sql.NullString `json:"application_platform"`
+	InterviewRound           sql.NullInt64  `json:"interview_round"`
+	ResumeUrl                sql.NullString `json:"resume_url"`
+	CoverLetterUrl           sql.NullString `json:"cover_letter_url"`
+	AssessmentTotalScore     sql.NullInt64  `json:"assessment_total_score"`
+	AssessmentRecommendation sql.NullString `json:"assessment_recommendation"`
+	NotesCount               int64          `json:"notes_count"`
+}
+
+func (q *Queries) GetJob(ctx context.Context, id int64) (GetJobRow, error) {
 	row := q.db.QueryRowContext(ctx, getJob, id)
-	var i Job
+	var i GetJobRow
 	err := row.Scan(
 		&i.ID,
 		&i.Company,
@@ -185,38 +302,39 @@ func (q *Queries) GetJob(ctx context.Context, id int64) (Job, error) {
 		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Source,
+		&i.ApplicationPlatform,
+		&i.InterviewRound,
+		&i.ResumeUrl,
+		&i.CoverLetterUrl,
+		&i.AssessmentTotalScore,
+		&i.AssessmentRecommendation,
+		&i.NotesCount,
 	)
 	return i, err
 }
 
-const listJobs = `-- name: ListJobs :many
-SELECT id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at FROM jobs
-ORDER BY created_at DESC
+const listJobNotesByJobID = `-- name: ListJobNotesByJobID :many
+SELECT id, job_id, section, interview_round, content, created_at, updated_at FROM job_notes
+WHERE job_id = ?
+ORDER BY created_at DESC, id DESC
 `
 
-func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
-	rows, err := q.db.QueryContext(ctx, listJobs)
+func (q *Queries) ListJobNotesByJobID(ctx context.Context, jobID int64) ([]JobNote, error) {
+	rows, err := q.db.QueryContext(ctx, listJobNotesByJobID, jobID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Job
+	var items []JobNote
 	for rows.Next() {
-		var i Job
+		var i JobNote
 		if err := rows.Scan(
 			&i.ID,
-			&i.Company,
-			&i.Title,
-			&i.Location,
-			&i.WorkArrangement,
-			&i.Url,
-			&i.Stage,
-			&i.Status,
-			&i.DatePosted,
-			&i.DateFound,
-			&i.DateAssessed,
-			&i.DateApplied,
-			&i.Notes,
+			&i.JobID,
+			&i.Section,
+			&i.InterviewRound,
+			&i.Content,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -233,38 +351,148 @@ func (q *Queries) ListJobs(ctx context.Context) ([]Job, error) {
 	return items, nil
 }
 
+const listJobs = `-- name: ListJobs :many
+SELECT
+	j.id, j.company, j.title, j.location, j.work_arrangement, j.url, j.stage, j.status, j.date_posted, j.date_found, j.date_assessed, j.date_applied, j.notes, j.created_at, j.updated_at, j.source, j.application_platform, j.interview_round, j.resume_url, j.cover_letter_url,
+	ja.total_score AS assessment_total_score,
+	ja.recommendation AS assessment_recommendation,
+	(SELECT COUNT(*) FROM job_notes jn WHERE jn.job_id = j.id) AS notes_count
+FROM jobs j
+LEFT JOIN job_assessments ja ON j.id = ja.job_id
+ORDER BY j.created_at DESC
+`
+
+type ListJobsRow struct {
+	ID                       int64          `json:"id"`
+	Company                  string         `json:"company"`
+	Title                    string         `json:"title"`
+	Location                 sql.NullString `json:"location"`
+	WorkArrangement          sql.NullString `json:"work_arrangement"`
+	Url                      sql.NullString `json:"url"`
+	Stage                    string         `json:"stage"`
+	Status                   string         `json:"status"`
+	DatePosted               sql.NullTime   `json:"date_posted"`
+	DateFound                sql.NullTime   `json:"date_found"`
+	DateAssessed             sql.NullTime   `json:"date_assessed"`
+	DateApplied              sql.NullTime   `json:"date_applied"`
+	Notes                    sql.NullString `json:"notes"`
+	CreatedAt                sql.NullTime   `json:"created_at"`
+	UpdatedAt                sql.NullTime   `json:"updated_at"`
+	Source                   sql.NullString `json:"source"`
+	ApplicationPlatform      sql.NullString `json:"application_platform"`
+	InterviewRound           sql.NullInt64  `json:"interview_round"`
+	ResumeUrl                sql.NullString `json:"resume_url"`
+	CoverLetterUrl           sql.NullString `json:"cover_letter_url"`
+	AssessmentTotalScore     sql.NullInt64  `json:"assessment_total_score"`
+	AssessmentRecommendation sql.NullString `json:"assessment_recommendation"`
+	NotesCount               int64          `json:"notes_count"`
+}
+
+func (q *Queries) ListJobs(ctx context.Context) ([]ListJobsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listJobs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListJobsRow
+	for rows.Next() {
+		var i ListJobsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Company,
+			&i.Title,
+			&i.Location,
+			&i.WorkArrangement,
+			&i.Url,
+			&i.Stage,
+			&i.Status,
+			&i.DatePosted,
+			&i.DateFound,
+			&i.DateAssessed,
+			&i.DateApplied,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Source,
+			&i.ApplicationPlatform,
+			&i.InterviewRound,
+			&i.ResumeUrl,
+			&i.CoverLetterUrl,
+			&i.AssessmentTotalScore,
+			&i.AssessmentRecommendation,
+			&i.NotesCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markJobAssessed = `-- name: MarkJobAssessed :exec
+UPDATE jobs
+SET
+	date_assessed = COALESCE(date_assessed, CURRENT_TIMESTAMP),
+	stage = CASE WHEN stage = 'Search' THEN 'Assessment' ELSE stage END,
+	updated_at = CURRENT_TIMESTAMP
+WHERE id = ?
+`
+
+func (q *Queries) MarkJobAssessed(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, markJobAssessed, id)
+	return err
+}
+
 const updateJob = `-- name: UpdateJob :one
 UPDATE jobs
 SET
-company = ?,
+	company = ?,
 	title = ?,
 	location = ?,
 	work_arrangement = ?,
+	source = ?,
+	application_platform = ?,
 	url = ?,
 	stage = ?,
+	interview_round = ?,
 	status = ?,
 	date_posted = ?,
+	date_found = COALESCE(?, date_found),
 	date_assessed = ?,
 	date_applied = ?,
+	resume_url = ?,
+	cover_letter_url = ?,
 	notes = ?,
 	updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
-RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at
+RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at, source, application_platform, interview_round, resume_url, cover_letter_url
 `
 
 type UpdateJobParams struct {
-	Company         string         `json:"company"`
-	Title           string         `json:"title"`
-	Location        sql.NullString `json:"location"`
-	WorkArrangement sql.NullString `json:"work_arrangement"`
-	Url             sql.NullString `json:"url"`
-	Stage           string         `json:"stage"`
-	Status          string         `json:"status"`
-	DatePosted      sql.NullTime   `json:"date_posted"`
-	DateAssessed    sql.NullTime   `json:"date_assessed"`
-	DateApplied     sql.NullTime   `json:"date_applied"`
-	Notes           sql.NullString `json:"notes"`
-	ID              int64          `json:"id"`
+	Company             string         `json:"company"`
+	Title               string         `json:"title"`
+	Location            sql.NullString `json:"location"`
+	WorkArrangement     sql.NullString `json:"work_arrangement"`
+	Source              sql.NullString `json:"source"`
+	ApplicationPlatform sql.NullString `json:"application_platform"`
+	Url                 sql.NullString `json:"url"`
+	Stage               string         `json:"stage"`
+	InterviewRound      sql.NullInt64  `json:"interview_round"`
+	Status              string         `json:"status"`
+	DatePosted          sql.NullTime   `json:"date_posted"`
+	DateFound           sql.NullTime   `json:"date_found"`
+	DateAssessed        sql.NullTime   `json:"date_assessed"`
+	DateApplied         sql.NullTime   `json:"date_applied"`
+	ResumeUrl           sql.NullString `json:"resume_url"`
+	CoverLetterUrl      sql.NullString `json:"cover_letter_url"`
+	Notes               sql.NullString `json:"notes"`
+	ID                  int64          `json:"id"`
 }
 
 func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, error) {
@@ -273,12 +501,18 @@ func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, erro
 		arg.Title,
 		arg.Location,
 		arg.WorkArrangement,
+		arg.Source,
+		arg.ApplicationPlatform,
 		arg.Url,
 		arg.Stage,
+		arg.InterviewRound,
 		arg.Status,
 		arg.DatePosted,
+		arg.DateFound,
 		arg.DateAssessed,
 		arg.DateApplied,
+		arg.ResumeUrl,
+		arg.CoverLetterUrl,
 		arg.Notes,
 		arg.ID,
 	)
@@ -297,6 +531,51 @@ func (q *Queries) UpdateJob(ctx context.Context, arg UpdateJobParams) (Job, erro
 		&i.DateAssessed,
 		&i.DateApplied,
 		&i.Notes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Source,
+		&i.ApplicationPlatform,
+		&i.InterviewRound,
+		&i.ResumeUrl,
+		&i.CoverLetterUrl,
+	)
+	return i, err
+}
+
+const updateJobNote = `-- name: UpdateJobNote :one
+UPDATE job_notes
+SET
+	section = ?,
+	interview_round = ?,
+	content = ?,
+	updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND job_id = ?
+RETURNING id, job_id, section, interview_round, content, created_at, updated_at
+`
+
+type UpdateJobNoteParams struct {
+	Section        string        `json:"section"`
+	InterviewRound sql.NullInt64 `json:"interview_round"`
+	Content        string        `json:"content"`
+	ID             int64         `json:"id"`
+	JobID          int64         `json:"job_id"`
+}
+
+func (q *Queries) UpdateJobNote(ctx context.Context, arg UpdateJobNoteParams) (JobNote, error) {
+	row := q.db.QueryRowContext(ctx, updateJobNote,
+		arg.Section,
+		arg.InterviewRound,
+		arg.Content,
+		arg.ID,
+		arg.JobID,
+	)
+	var i JobNote
+	err := row.Scan(
+		&i.ID,
+		&i.JobID,
+		&i.Section,
+		&i.InterviewRound,
+		&i.Content,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

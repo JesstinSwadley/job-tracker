@@ -9,21 +9,26 @@ import (
 )
 
 type Job struct {
-	ID              int64          `json:"id"`
-	Company         string         `json:"company"`
-	Title           string         `json:"title"`
-	Location        sql.NullString `json:"location"`
-	WorkArrangement sql.NullString `json:"work_arrangement"`
-	Url             sql.NullString `json:"url"`
-	Stage           string         `json:"stage"`
-	Status          string         `json:"status"`
-	DatePosted      sql.NullTime   `json:"date_posted"`
-	DateFound       sql.NullTime   `json:"date_found"`
-	DateAssessed    sql.NullTime   `json:"date_assessed"`
-	DateApplied     sql.NullTime   `json:"date_applied"`
-	Notes           sql.NullString `json:"notes"`
-	CreatedAt       sql.NullTime   `json:"created_at"`
-	UpdatedAt       sql.NullTime   `json:"updated_at"`
+	ID                  int64          `json:"id"`
+	Company             string         `json:"company"`
+	Title               string         `json:"title"`
+	Location            sql.NullString `json:"location"`
+	WorkArrangement     sql.NullString `json:"work_arrangement"`
+	Url                 sql.NullString `json:"url"`
+	Stage               string         `json:"stage"`
+	Status              string         `json:"status"`
+	DatePosted          sql.NullTime   `json:"date_posted"`
+	DateFound           sql.NullTime   `json:"date_found"`
+	DateAssessed        sql.NullTime   `json:"date_assessed"`
+	DateApplied         sql.NullTime   `json:"date_applied"`
+	Notes               sql.NullString `json:"notes"`
+	CreatedAt           sql.NullTime   `json:"created_at"`
+	UpdatedAt           sql.NullTime   `json:"updated_at"`
+	Source              sql.NullString `json:"source"`
+	ApplicationPlatform sql.NullString `json:"application_platform"`
+	InterviewRound      sql.NullInt64  `json:"interview_round"`
+	ResumeUrl           sql.NullString `json:"resume_url"`
+	CoverLetterUrl      sql.NullString `json:"cover_letter_url"`
 }
 
 type JobAssessment struct {
@@ -37,4 +42,14 @@ type JobAssessment struct {
 	GrowthValue          sql.NullInt64  `json:"growth_value"`
 	TotalScore           sql.NullInt64  `json:"total_score"`
 	Recommendation       sql.NullString `json:"recommendation"`
+}
+
+type JobNote struct {
+	ID             int64         `json:"id"`
+	JobID          int64         `json:"job_id"`
+	Section        string        `json:"section"`
+	InterviewRound sql.NullInt64 `json:"interview_round"`
+	Content        string        `json:"content"`
+	CreatedAt      sql.NullTime  `json:"created_at"`
+	UpdatedAt      sql.NullTime  `json:"updated_at"`
 }
