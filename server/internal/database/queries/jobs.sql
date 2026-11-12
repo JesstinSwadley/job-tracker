@@ -1,26 +1,24 @@
 -- name: CreateJob :one
 INSERT INTO jobs (
-	company,
-	title,
-	location,
-	work_arrangement,
-	source,
-	application_platform,
-	url,
-	stage,
-	interview_round,
-	status,
-	date_posted,
-	date_found,
-	date_assessed,
-	date_applied,
-	resume_url,
-	cover_letter_url,
-	notes
+    company,
+    title,
+    location,
+    work_arrangement,
+    source,
+    application_platform,
+    url,
+    stage,
+    interview_round,
+    status,
+    date_posted,
+    date_found,
+    date_assessed,
+    date_applied,
+    resume_url,
+    cover_letter_url,
+    notes
 ) VALUES (
-	?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-	COALESCE(?, CURRENT_TIMESTAMP),
-	?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -47,24 +45,24 @@ ORDER BY j.created_at DESC;
 -- name: UpdateJob :one
 UPDATE jobs
 SET
-	company = ?,
-	title = ?,
-	location = ?,
-	work_arrangement = ?,
-	source = ?,
-	application_platform = ?,
-	url = ?,
-	stage = ?,
-	interview_round = ?,
-	status = ?,
-	date_posted = ?,
-	date_found = COALESCE(?, date_found),
-	date_assessed = ?,
-	date_applied = ?,
-	resume_url = ?,
-	cover_letter_url = ?,
-	notes = ?,
-	updated_at = CURRENT_TIMESTAMP
+    company = ?,
+    title = ?,
+    location = ?,
+    work_arrangement = ?,
+    source = ?,
+    application_platform = ?,
+    url = ?,
+    stage = ?,
+    interview_round = ?,
+    status = ?,
+    date_posted = ?,
+    date_found = ?,
+    date_assessed = ?,
+    date_applied = ?,
+    resume_url = ?,
+    cover_letter_url = ?,
+    notes = ?,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 RETURNING *;
 

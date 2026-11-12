@@ -12,30 +12,13 @@ import (
 )
 
 func TestJobAssessment(t *testing.T) {
-	app := server.New("../../jobtracker_test.db")
+	app := setupTestServer(t)
 	handler := app.RegisterRoutes()
 
-	seedJob := func() server.JobResponse {
-		body := bytes.NewReader([]byte(`{"company":"Acme Corp","title":"Business Systems Manager"}`))
-		req := httptest.NewRequest(http.MethodPost, "/jobs", body)
-		req.Header.Set("Content-Type", "application/json")
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, req)
-
-		if rec.Code != http.StatusCreated {
-			t.Fatalf("failed to seed parent job: got status %d", rec.Code)
-		}
-
-		var job server.JobResponse
-
-		if err := json.NewDecoder(rec.Body).Decode(&job); err != nil {
-			t.Fatalf("failed to decode parent job: %v", err)
-		}
-		return job
-	}
+	defaultJobPayload := `{"company":"Acme Corp","title":"Business Systems Manager"}`
 
 	t.Run("returns 404 when fetching an assessment for an unassessed job", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/jobs/%d/assessment", job.ID), nil)
 		rec := httptest.NewRecorder()
@@ -47,7 +30,7 @@ func TestJobAssessment(t *testing.T) {
 	})
 
 	t.Run("creates assessment, calculates total score and recommendation", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		assessmentPayload := `{
 			"career_alignment": 25,
@@ -80,8 +63,54 @@ func TestJobAssessment(t *testing.T) {
 		}
 	})
 
+	t.Run("marks parent job as assessed and advances stage from Search to Assessment", func(t *testing.T) {
+		job := seedJob(t, handler, defaultJobPayload)
+		if job.Stage != "Search" {
+			t.Fatalf("expected initial stage 'Search', got %q", job.Stage)
+		}
+
+		assessmentPayload := `{"career_alignment": 22, "experience_match": 16, "technical_alignment": 12, "compensation_score": 11, "work_arrangement_score": 8, "geographic_alignment": 4, "growth_value": 8}`
+		putReq := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d/assessment", job.ID), bytes.NewReader([]byte(assessmentPayload)))
+		putReq.Header.Set("Content-Type", "application/json")
+		putRec := httptest.NewRecorder()
+		handler.ServeHTTP(putRec, putReq)
+
+		if putRec.Code != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", putRec.Code)
+		}
+
+		getReq := httptest.NewRequest(http.MethodGet, "/jobs", nil)
+		getRec := httptest.NewRecorder()
+		handler.ServeHTTP(getRec, getReq)
+
+		var jobs []server.JobResponse
+		if err := json.NewDecoder(getRec.Body).Decode(&jobs); err != nil {
+			t.Fatalf("failed to decode jobs: %v", err)
+		}
+
+		for _, j := range jobs {
+			if j.ID == job.ID {
+				if j.Stage != "Assessment" {
+					t.Errorf("expected stage to advance to 'Assessment', got %q", j.Stage)
+				}
+				if j.DateAssessed == "" {
+					t.Errorf("expected date_assessed to be populated after saving assessment")
+				}
+				if j.AssessmentTotalScore == nil || *j.AssessmentTotalScore != 81 {
+					t.Errorf("expected joined assessment_total_score 81, got %v", j.AssessmentTotalScore)
+				}
+				if j.AssessmentRecommendation != "Apply - Target" {
+					t.Errorf("expected joined assessment_recommendation 'Apply - Target', got %q", j.AssessmentRecommendation)
+				}
+				return
+			}
+		}
+
+		t.Fatalf("seeded job ID %d not found in GET /jobs response", job.ID)
+	})
+
 	t.Run("retrieves previously saved assessment", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		assessmentPayload := `{
 			"career_alignment": 20,
@@ -115,7 +144,7 @@ func TestJobAssessment(t *testing.T) {
 	})
 
 	t.Run("evaluates target tier correctly (75-84)", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		targetPayload := `{
 			"career_alignment": 22,
@@ -149,7 +178,7 @@ func TestJobAssessment(t *testing.T) {
 	})
 
 	t.Run("updates existing assessment and recalculates scores", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		initialPayload := `{"career_alignment":25,"experience_match":16,"technical_alignment":12,"compensation_score":11,"work_arrangement_score":10,"geographic_alignment":5,"growth_value":8}`
 		req1 := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d/assessment", job.ID), bytes.NewReader([]byte(initialPayload)))
@@ -168,7 +197,6 @@ func TestJobAssessment(t *testing.T) {
 		}
 
 		var res map[string]any
-
 		if err := json.NewDecoder(rec2.Body).Decode(&res); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
@@ -196,7 +224,7 @@ func TestJobAssessment(t *testing.T) {
 	})
 
 	t.Run("returns 400 for score values exceeding category maximums", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		invalidPayload := `{"career_alignment": 30}`
 		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d/assessment", job.ID), bytes.NewReader([]byte(invalidPayload)))
@@ -211,7 +239,7 @@ func TestJobAssessment(t *testing.T) {
 	})
 
 	t.Run("deleting a job cascades and removes its assessment", func(t *testing.T) {
-		job := seedJob()
+		job := seedJob(t, handler, defaultJobPayload)
 
 		assessmentPayload := `{"career_alignment":20,"experience_match":16}`
 		putReq := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/jobs/%d/assessment", job.ID), bytes.NewReader([]byte(assessmentPayload)))

@@ -3,15 +3,39 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/JesstinSwadley/job-tracker/internal/database"
 )
 
+type AssessmentRequest struct {
+	CareerAlignment      int `json:"career_alignment"`
+	ExperienceMatch      int `json:"experience_match"`
+	TechnicalAlignment   int `json:"technical_alignment"`
+	CompensationScore    int `json:"compensation_score"`
+	WorkArrangementScore int `json:"work_arrangement_score"`
+	GeographicAlignment  int `json:"geographic_alignment"`
+	GrowthValue          int `json:"growth_value"`
+}
+
+type AssessmentResponse struct {
+	JobID                int64  `json:"job_id"`
+	CareerAlignment      int    `json:"career_alignment"`
+	ExperienceMatch      int    `json:"experience_match"`
+	TechnicalAlignment   int    `json:"technical_alignment"`
+	CompensationScore    int    `json:"compensation_score"`
+	WorkArrangementScore int    `json:"work_arrangement_score"`
+	GeographicAlignment  int    `json:"geographic_alignment"`
+	GrowthValue          int    `json:"growth_value"`
+	TotalScore           int    `json:"total_score"`
+	Recommendation       string `json:"recommendation"`
+}
+
+// handleSaveAssessment godoc
 // @Summary Save or update job assessment
-// @Description Calculate weighted score and save assessment for a job
+// @Description Calculate weighted score, save assessment for a job, and mark the job as assessed
 // @Tags assessments
 // @Accept json
 // @Produce json
@@ -23,26 +47,19 @@ import (
 // @Failure 500 {object} ErrorResponse
 // @Router /jobs/{id}/assessment [put]
 func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := parsePathID(r, "id")
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid job id"})
+		writeError(w, http.StatusBadRequest, "invalid job id")
 		return
 	}
 
-	_, err = s.queries.GetJob(r.Context(), id)
-
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "job not found"})
+	if _, err := s.queries.GetJob(r.Context(), id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "job not found")
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "database error"})
+			log.Printf("failed to verify job %d before assessment: %v", id, err)
+			writeError(w, http.StatusInternalServerError, "database error")
 		}
 		return
 	}
@@ -50,9 +67,7 @@ func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
 	var req AssessmentRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid request body"})
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -63,9 +78,7 @@ func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
 		req.WorkArrangementScore < 0 || req.WorkArrangementScore > 10 ||
 		req.GeographicAlignment < 0 || req.GeographicAlignment > 5 ||
 		req.GrowthValue < 0 || req.GrowthValue > 10 {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "score exceeds category maximum"})
+		writeError(w, http.StatusBadRequest, "score exceeds category maximum")
 		return
 	}
 
@@ -74,50 +87,27 @@ func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
 	recommendation := calculateRecommendation(totalScore)
 
 	params := database.CreateOrUpdateAssessmentParams{
-		JobID: id,
-		CareerAlignment: sql.NullInt64{
-			Int64: int64(req.CareerAlignment),
-			Valid: true,
-		},
-		ExperienceMatch: sql.NullInt64{
-			Int64: int64(req.ExperienceMatch),
-			Valid: true,
-		},
-		TechnicalAlignment: sql.NullInt64{
-			Int64: int64(req.TechnicalAlignment),
-			Valid: true,
-		},
-		CompensationScore: sql.NullInt64{
-			Int64: int64(req.CompensationScore),
-			Valid: true,
-		},
-		WorkArrangementScore: sql.NullInt64{
-			Int64: int64(req.WorkArrangementScore),
-			Valid: true,
-		},
-		GeographicAlignment: sql.NullInt64{
-			Int64: int64(req.GeographicAlignment),
-			Valid: true,
-		},
-		GrowthValue: sql.NullInt64{
-			Int64: int64(req.GrowthValue),
-			Valid: true,
-		},
-		TotalScore: sql.NullInt64{
-			Int64: int64(totalScore),
-			Valid: true,
-		},
-		Recommendation: sql.NullString{
-			String: recommendation,
-			Valid:  true,
-		},
+		JobID:                id,
+		CareerAlignment:      toNullInt64(int64(req.CareerAlignment)),
+		ExperienceMatch:      toNullInt64(int64(req.ExperienceMatch)),
+		TechnicalAlignment:   toNullInt64(int64(req.TechnicalAlignment)),
+		CompensationScore:    toNullInt64(int64(req.CompensationScore)),
+		WorkArrangementScore: toNullInt64(int64(req.WorkArrangementScore)),
+		GeographicAlignment:  toNullInt64(int64(req.GeographicAlignment)),
+		GrowthValue:          toNullInt64(int64(req.GrowthValue)),
+		TotalScore:           toNullInt64(int64(totalScore)),
+		Recommendation:       toNullString(recommendation),
 	}
 
 	if err := s.queries.CreateOrUpdateAssessment(r.Context(), params); err != nil {
 		log.Printf("failed to save assessment: %v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "failed to save assessment"})
+		writeError(w, http.StatusInternalServerError, "failed to save assessment")
+		return
+	}
+
+	if err := s.queries.MarkJobAssessed(r.Context(), id); err != nil {
+		log.Printf("failed to mark job %d as assessed: %v", id, err)
+		writeError(w, http.StatusInternalServerError, "failed to update job assessment status")
 		return
 	}
 
@@ -134,11 +124,10 @@ func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
 		Recommendation:       recommendation,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(res)
+	writeJSON(w, http.StatusOK, res)
 }
 
+// handleGetAssessment godoc
 // @Summary Get job assessment
 // @Description Retrieve the assessment details and score for a job
 // @Tags assessments
@@ -150,45 +139,38 @@ func (s *Server) handleSaveAssessment(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ErrorResponse
 // @Router /jobs/{id}/assessment [get]
 func (s *Server) handleGetAssessment(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-
+	id, err := parsePathID(r, "id")
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "invalid job id"})
+		writeError(w, http.StatusBadRequest, "invalid job id")
 		return
 	}
 
 	assessment, err := s.queries.GetAssessmentByJobID(r.Context(), id)
+
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "assessment not found"})
+		if errors.Is(err, sql.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "assessment not found")
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(ErrorResponse{Error: "database error"})
+			log.Printf("failed to fetch assessment for job %d: %v", id, err)
+			writeError(w, http.StatusInternalServerError, "database error")
 		}
 		return
 	}
 
 	res := AssessmentResponse{
 		JobID:                assessment.JobID,
-		CareerAlignment:      int(assessment.CareerAlignment.Int64),
-		ExperienceMatch:      int(assessment.ExperienceMatch.Int64),
-		TechnicalAlignment:   int(assessment.TechnicalAlignment.Int64),
-		CompensationScore:    int(assessment.CompensationScore.Int64),
-		WorkArrangementScore: int(assessment.WorkArrangementScore.Int64),
-		GeographicAlignment:  int(assessment.GeographicAlignment.Int64),
-		GrowthValue:          int(assessment.GrowthValue.Int64),
-		TotalScore:           int(assessment.TotalScore.Int64),
-		Recommendation:       assessment.Recommendation.String,
+		CareerAlignment:      int(fromNullInt64(assessment.CareerAlignment)),
+		ExperienceMatch:      int(fromNullInt64(assessment.ExperienceMatch)),
+		TechnicalAlignment:   int(fromNullInt64(assessment.TechnicalAlignment)),
+		CompensationScore:    int(fromNullInt64(assessment.CompensationScore)),
+		WorkArrangementScore: int(fromNullInt64(assessment.WorkArrangementScore)),
+		GeographicAlignment:  int(fromNullInt64(assessment.GeographicAlignment)),
+		GrowthValue:          int(fromNullInt64(assessment.GrowthValue)),
+		TotalScore:           int(fromNullInt64(assessment.TotalScore)),
+		Recommendation:       fromNullString(assessment.Recommendation),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(res)
+	writeJSON(w, http.StatusOK, res)
 }
 
 func calculateRecommendation(total int) string {

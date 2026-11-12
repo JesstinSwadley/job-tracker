@@ -12,27 +12,25 @@ import (
 
 const createJob = `-- name: CreateJob :one
 INSERT INTO jobs (
-	company,
-	title,
-	location,
-	work_arrangement,
-	source,
-	application_platform,
-	url,
-	stage,
-	interview_round,
-	status,
-	date_posted,
-	date_found,
-	date_assessed,
-	date_applied,
-	resume_url,
-	cover_letter_url,
-	notes
+    company,
+    title,
+    location,
+    work_arrangement,
+    source,
+    application_platform,
+    url,
+    stage,
+    interview_round,
+    status,
+    date_posted,
+    date_found,
+    date_assessed,
+    date_applied,
+    resume_url,
+    cover_letter_url,
+    notes
 ) VALUES (
-	?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-	COALESCE(?, CURRENT_TIMESTAMP),
-	?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at, source, application_platform, interview_round, resume_url, cover_letter_url
 `
@@ -49,7 +47,7 @@ type CreateJobParams struct {
 	InterviewRound      sql.NullInt64  `json:"interview_round"`
 	Status              string         `json:"status"`
 	DatePosted          sql.NullTime   `json:"date_posted"`
-	Column12            interface{}    `json:"column_12"`
+	DateFound           sql.NullTime   `json:"date_found"`
 	DateAssessed        sql.NullTime   `json:"date_assessed"`
 	DateApplied         sql.NullTime   `json:"date_applied"`
 	ResumeUrl           sql.NullString `json:"resume_url"`
@@ -70,7 +68,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (Job, erro
 		arg.InterviewRound,
 		arg.Status,
 		arg.DatePosted,
-		arg.Column12,
+		arg.DateFound,
 		arg.DateAssessed,
 		arg.DateApplied,
 		arg.ResumeUrl,
@@ -452,24 +450,24 @@ func (q *Queries) MarkJobAssessed(ctx context.Context, id int64) error {
 const updateJob = `-- name: UpdateJob :one
 UPDATE jobs
 SET
-	company = ?,
-	title = ?,
-	location = ?,
-	work_arrangement = ?,
-	source = ?,
-	application_platform = ?,
-	url = ?,
-	stage = ?,
-	interview_round = ?,
-	status = ?,
-	date_posted = ?,
-	date_found = COALESCE(?, date_found),
-	date_assessed = ?,
-	date_applied = ?,
-	resume_url = ?,
-	cover_letter_url = ?,
-	notes = ?,
-	updated_at = CURRENT_TIMESTAMP
+    company = ?,
+    title = ?,
+    location = ?,
+    work_arrangement = ?,
+    source = ?,
+    application_platform = ?,
+    url = ?,
+    stage = ?,
+    interview_round = ?,
+    status = ?,
+    date_posted = ?,
+    date_found = ?,
+    date_assessed = ?,
+    date_applied = ?,
+    resume_url = ?,
+    cover_letter_url = ?,
+    notes = ?,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 RETURNING id, company, title, location, work_arrangement, url, stage, status, date_posted, date_found, date_assessed, date_applied, notes, created_at, updated_at, source, application_platform, interview_round, resume_url, cover_letter_url
 `
