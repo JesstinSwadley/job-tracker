@@ -1,4 +1,4 @@
-.PHONY: help dev-server dev-client dev test test-backend test-frontend migrate-up migrate-down migrate-test sqlc swagger clean
+.PHONY: help dev-server dev-client test test-backend test-frontend test-frontend-watch migrate-create migrate-up migrate-down migrate-test sqlc swagger clean
 
 # SQLite database paths
 ROOT_DIR       := $(CURDIR)
@@ -8,19 +8,27 @@ MIGRATIONS_DIR := $(ROOT_DIR)/server/internal/database/migrations
 
 help: ## Show this help message
 	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # --- Development ---
 
-dev-server: ## Run the Go backend server (use DB=<path> to override)
+dev-server: ## Run the Go backend server (use DB_PATH=<path> to override)
 	@echo "Starting backend server..."
 	@cd server && DB_PATH="$(DB_PATH)" go run ./cmd/main.go 
 
 dev-client: ## Run the React Vite frontend
-	@echo "Starting the React Vite frontend"
+	@echo "Starting the React Vite frontend..."
 	@cd client && npm run dev
 
 # --- Database & Migrations ---
+
+migrate-create: ## Create a new SQL migration (usage: make migrate-create name=<name>)
+	@if [ -z "$(name)" ]; then \
+		echo "Error: migration name is required."; \
+		echo "Usage: make migrate-create name=<migration_name>"; \
+		exit 1; \
+	fi
+	@goose -dir $(MIGRATIONS_DIR) create $(name) sql
 
 migrate-up: ## Apply migrations to development database
 	@echo "Applying migrations to development database..."
@@ -28,13 +36,14 @@ migrate-up: ## Apply migrations to development database
 
 migrate-down: ## Roll back last migration on development database
 	@echo "Rolling back migration..."
-	@cd server && goose -dir $(MIGRATIONS_DIR) sqlite3 $(DB_PATH) dowm
+	@cd server && goose -dir $(MIGRATIONS_DIR) sqlite3 $(DB_PATH) down
 
 migrate-test: ## Apply migrations to isolated test database
 	@echo "Applying migrations to test database..."
-	@cd server && goose -dir goose -dir $(MIGRATIONS_DIR) sqlite3 $(TEST_DB_PATH) up
+	@cd server && goose -dir $(MIGRATIONS_DIR) sqlite3 $(TEST_DB_PATH) up
 
-# --- Testing
+# --- Testing ---
+
 test: test-backend test-frontend ## Run all test suites (backend & frontend)
 
 test-backend: migrate-test ## Run Go backend tests against isolated test database
