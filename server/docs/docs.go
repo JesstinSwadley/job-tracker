@@ -37,7 +37,7 @@ const docTemplate = `{
         },
         "/jobs": {
             "get": {
-                "description": "Retrieve a list of all tracked jobs",
+                "description": "Retrieve a list of all tracked jobs with assessment summaries and note counts",
                 "produces": [
                     "application/json"
                 ],
@@ -253,7 +253,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Calculate weighted score and save assessment for a job",
+                "description": "Calculate weighted score, save assessment for a job, and mark the job as assessed",
                 "consumes": [
                     "application/json"
                 ],
@@ -288,6 +288,225 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/server.AssessmentResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/{id}/notes": {
+            "get": {
+                "description": "Retrieve all sectioned notes associated with a specific job",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "List notes for a job",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.JobNoteResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new sectioned note to a tracked job",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Create a note for a job",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Note details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.CreateJobNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/server.JobNoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/{id}/notes/{noteId}": {
+            "put": {
+                "description": "Update an existing note belonging to a specific job",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Update a job note",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Note ID",
+                        "name": "noteId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated note details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.UpdateJobNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.JobNoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove a note belonging to a specific job",
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Delete a job note",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Note ID",
+                        "name": "noteId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -373,16 +592,57 @@ const docTemplate = `{
                 }
             }
         },
+        "server.CreateJobNoteRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "interview_round": {
+                    "type": "integer"
+                },
+                "section": {
+                    "type": "string"
+                }
+            }
+        },
         "server.CreateJobRequest": {
             "type": "object",
             "properties": {
+                "application_platform": {
+                    "type": "string"
+                },
                 "company": {
                     "type": "string"
+                },
+                "cover_letter_url": {
+                    "type": "string"
+                },
+                "date_applied": {
+                    "type": "string"
+                },
+                "date_assessed": {
+                    "type": "string"
+                },
+                "date_found": {
+                    "type": "string"
+                },
+                "date_posted": {
+                    "type": "string"
+                },
+                "interview_round": {
+                    "type": "integer"
                 },
                 "location": {
                     "type": "string"
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "resume_url": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 },
                 "stage": {
@@ -407,23 +667,88 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string",
-                    "example": "company and position are required"
+                    "example": "company and title are required"
+                }
+            }
+        },
+        "server.JobNoteResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "interview_round": {
+                    "type": "integer"
+                },
+                "job_id": {
+                    "type": "integer"
+                },
+                "section": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
         "server.JobResponse": {
             "type": "object",
             "properties": {
+                "application_platform": {
+                    "type": "string"
+                },
+                "assessment_recommendation": {
+                    "type": "string"
+                },
+                "assessment_total_score": {
+                    "type": "integer"
+                },
                 "company": {
                     "type": "string"
                 },
+                "cover_letter_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date_applied": {
+                    "type": "string"
+                },
+                "date_assessed": {
+                    "type": "string"
+                },
+                "date_found": {
+                    "type": "string"
+                },
+                "date_posted": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "integer"
+                },
+                "interview_round": {
                     "type": "integer"
                 },
                 "location": {
                     "type": "string"
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "notes_count": {
+                    "type": "integer"
+                },
+                "resume_url": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 },
                 "stage": {
@@ -435,6 +760,9 @@ const docTemplate = `{
                 "title": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 },
@@ -443,16 +771,57 @@ const docTemplate = `{
                 }
             }
         },
+        "server.UpdateJobNoteRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "interview_round": {
+                    "type": "integer"
+                },
+                "section": {
+                    "type": "string"
+                }
+            }
+        },
         "server.UpdateJobRequest": {
             "type": "object",
             "properties": {
+                "application_platform": {
+                    "type": "string"
+                },
                 "company": {
                     "type": "string"
+                },
+                "cover_letter_url": {
+                    "type": "string"
+                },
+                "date_applied": {
+                    "type": "string"
+                },
+                "date_assessed": {
+                    "type": "string"
+                },
+                "date_found": {
+                    "type": "string"
+                },
+                "date_posted": {
+                    "type": "string"
+                },
+                "interview_round": {
+                    "type": "integer"
                 },
                 "location": {
                     "type": "string"
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "resume_url": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 },
                 "stage": {

@@ -1,7 +1,7 @@
 # Job Tracker
 A lightweight, high-performance job application tracker and decision engine built with a product-first engineering mindset. Designed to eliminate spreadsheet fatigue, it features a zero-dependency Go standard library backend, a local SQLite datastore managed via Goose and sqlc, and a React/Vite frontend developed strictly through Test-Driven Development (TDD).
 
-Beyond standard CRUD tracking, the application features a built-in **Opportunity Assessment Engine** that quantitatively scores job postings against a weighted 100-point rubric to generate actionable recommendations (`Apply - Priority`, `Apply - Target`, `Apply - Stretch`, or `Do Not Apply`).
+Beyond standard CRUD tracking, the application features a built-in **Opportunity Assessment Engine** that quantitatively scores job postings against a weighted 100-point rubric to generate actionable recommendations (`Apply - Priority`, `Apply - Target`, `Apply - Stretch`, or `Do Not Apply`), alongside structured, sectioned note-taking for interview logs and role research.
 
 ## Tech Stack
 - **Backend:** Go 1.22+ (`net/http` standard library routing with method matching)
@@ -15,19 +15,21 @@ Beyond standard CRUD tracking, the application features a built-in **Opportunity
 - **Automation:** GNU Make
 
 ## Features
-- **Persistent Relational Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity (`ON DELETE CASCADE` for assessments).
-- **Full Lifecycle Pipeline:** Track applications across pipeline stages (`Search`, `Applied`, `Screening`, `Interview 1`, `Interview 2`, `Final Round`, `Offer`, `Archived`) and statuses (`Active`, `Interviewing`, `Rejected`, `Offer`, `Withdrawn`).
-- **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (totaling 100 points) with a live-updating score meter, automated recommendation tiers, and interactive summary badges.
+- **Persistent Relational Storage:** Zero-maintenance, self-hosted SQLite database with schema versioning via migrations and cascade deletion integrity (`ON DELETE CASCADE` for assessments and notes).
+- **Full Lifecycle Pipeline & Sourcing:** Track applications across linear pipeline stages (`Search`, `Assessment`, `Interviewing` with an `interview_round` counter, `Offer`, `Archived`) and outcome statuses (`Active`, `Rejected`, `Withdrawn`, `Ghosted`), complete with discovery source, application platform, lifecycle dates (`date_posted`, `date_found`, `date_assessed`, `date_applied`), and direct Google Docs links for tailored resumes and cover letters.
+- **Opportunity Assessment Engine:** Evaluates roles across 7 weighted rubric criteria (totaling 100 points) with a live-updating score meter, automated recommendation tiers, automatic `date_assessed` stamping, and joined summary badges.
+- **Sectioned Notes & Interview Logs:** Attach multiple timestamped notes to any job categorized by section (`General`, `Role`, `Interview`, `Compensation`) and optional interview round.
 - **Search & Status Filtering:** Filter applications on the fly by status tabs or execute real-time substring searches across company names, job titles, and locations.
 - **Metric Summaries:** Instant dashboard counters tracking total tracked roles, in-flight interviews, and high-priority opportunities.
 - **Destructive Action Confirmation:** Accessible confirmation dialog safeguard preventing accidental application deletions.
-- **Strict TDD & Modular Architecture:** Comprehensive test coverage with separate domain directories (`jobs/` and `assessments/`), guaranteeing rapid sub-second test runs across both frontend and backend suites.
+- **Strict TDD & Modular Architecture:** Comprehensive test coverage across isolated domain modules (`jobs`, `assessments`, and `notes`), guaranteeing rapid sub-second test runs across both frontend and backend suites.
 - **Interactive API Documentation:** Living OpenAPI 2.0 / Swagger documentation generated directly from Go annotations.
 
 ## Prerequisites
 - **Go:** 1.22 or higher
 - **Node.js:** v18+ and *npm*
 - **CLI Tools:** Install required Go binaries:
+
 ```bash
 go install [github.com/swaggo/swag/cmd/swag@latest](https://github.com/swaggo/swag/cmd/swag@latest)
 go install [github.com/pressly/goose/v3/cmd/goose@latest](https://github.com/pressly/goose/v3/cmd/goose@latest)
@@ -36,36 +38,41 @@ go install [github.com/sqlc-dev/sqlc/cmd/sqlc@latest](https://github.com/sqlc-de
 
 ## Project Structure
 ```Plaintext
-├── client/                     # React + Vite frontend
+├── client/                        # React + Vite frontend
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── assessments/    # AssessmentBadge, AssessmentModal & test suites
-│   │   │   └── jobs/           # CreateJobForm, JobList, UpdateJobForm, DeleteJobModal & tests
-│   │   ├── App.tsx             # Main dashboard, filter pipeline, & API client
-│   │   ├── index.css           # Tailwind CSS v4 root import
-│   │   ├── main.tsx            # React application root
-│   │   └── setupTests.ts       # Test environment configuration
+│   │   │   ├── assessments/       # AssessmentBadge, AssessmentModal & test suites
+│   │   │   └── jobs/              # CreateJobForm, JobList, UpdateJobForm, DeleteJobModal & tests
+│   │   ├── App.tsx                # Main dashboard, filter pipeline, & API client
+│   │   ├── index.css              # Tailwind CSS v4 root import
+│   │   ├── main.tsx               # React application root
+│   │   └── setupTests.ts          # Test environment configuration
 │   ├── index.html
 │   ├── package.json
-│   └── vite.config.ts          # Vite configuration with @tailwindcss/vite & Vitest happy-dom
-├── server/                     # Go backend
+│   └── vite.config.ts             # Vite configuration with @tailwindcss/vite & Vitest happy-dom
+├── server/                        # Go backend
 │   ├── cmd/
-│   │   └── main.go             # Application entry point
-│   ├── docs/                   # Auto-generated Swagger documentation
+│   │   └── main.go                # Application entry point
+│   ├── docs/                      # Auto-generated Swagger documentation
 │   ├── internal/
-│   │   ├── database/           # sqlc queries, generated Go models, and Goose migrations
+│   │   ├── database/              # sqlc queries, generated Go models, and Goose migrations
 │   │   │   ├── migrations/
 │   │   │   └── queries/
-│   │   └── server/             # Modular HTTP handlers & TDD test suites
-│   │       ├── server.go       # Server initialization, mux, and health check
-│   │       ├── jobs.go         # Job CRUD handlers, DTOs, and lifecycle logic
-│   │       ├── assessments.go  # Assessment handlers, DTOs, and scoring engine
-│   │       ├── server_test.go  # Job CRUD integration test suite
-│   │       └── assessment_test.go # Assessment scoring & cascade test suite
-│   ├── sqlc.yaml               # sqlc configuration
-│   ├── jobtracker.db           # SQLite development database
-│   └── jobtracker_test.db      # SQLite isolated test database
-├── Makefile                    # Root automation for dev, test, and migration tasks
+│   │   └── server/                # Modular HTTP handlers & TDD test suites
+│   │       ├── server.go          # Server initialization, mux, and health check
+│   │       ├── helpers.go         # Shared JSON responders, path parsers, and sql.Null* converters
+│   │       ├── jobs.go            # Job CRUD handlers, DTOs, and lifecycle logic
+│   │       ├── assessments.go     # Assessment handlers, DTOs, and scoring engine
+│   │       ├── notes.go           # Sectioned job notes CRUD handlers and DTOs
+│   │       ├── testhelpers_test.go # Shared isolated test DB setup and seeding helpers
+│   │       ├── server_test.go     # Health check & routing tests
+│   │       ├── jobs_test.go       # Job CRUD integration test suite
+│   │       ├── assessment_test.go # Assessment scoring, stage transition & cascade test suite
+│   │       └── notes_test.go      # Sectioned notes CRUD, ownership & cascade test suite
+│   ├── sqlc.yaml                  # sqlc configuration
+│   ├── jobtracker.db              # SQLite development database
+│   └── jobtracker_test.db         # SQLite isolated test database
+├── Makefile                       # Root automation for dev, test, migration, and codegen tasks
 └── README.md
 ```
 
@@ -143,15 +150,19 @@ make test-frontend-watch
 
 ## API Specification
 ### Endpoints
-|  Method   |  Endpoint               |  Description                                           | Status Codes         |
-|  -------- |  ---------------------- |  ----------------------------------------------------  | -------------------  |
-|  GET      |  /health                |  Server health check                                   |  200                 |
-|  GET      |  /jobs                  |  Retrieve all tracked jobs                             |  200, 500            | 
-|  POST     |  /jobs                  |  Create a new job appliaction                          |  201, 400, 500       |
-|  PUT      |  /jobs/{id}             |  Update job details or status                          |  200, 400, 404, 500  |
-|  DELETE   |  /jobs/{id}             |  Delete a tracked job                                  |  204, 400, 404, 500  |
-|  GET      |  /jobs/{id}/assessment  |  Retrieve score and recommendation for a job           |  200, 400, 404, 500  |
-|  PUT      |  /jobs/{id}/assessment  |  Upsert scores, compute total, and set recommendation  |  200, 400, 404, 500  |
+| Method | Endpoint                  | Description                                                            | Status Codes        |
+| ------ | ------------------------- | ---------------------------------------------------------------------- | ------------------- |
+| GET    | /health                   | Server health check                                                    | 200                 |
+| GET    | /jobs                     | Retrieve all tracked jobs with assessment summaries and note counts    | 200, 500            |
+| POST   | /jobs                     | Create a new job application                                           | 201, 400, 500       |
+| PUT    | /jobs/{id}                | Update job details, dates, links, stage, or status                     | 200, 400, 404, 500  |
+| DELETE | /jobs/{id}                | Delete a tracked job (cascades to assessments and notes)               | 204, 400, 404, 500  |
+| GET    | /jobs/{id}/assessment     | Retrieve score and recommendation for a job                            | 200, 400, 404, 500  |
+| PUT    | /jobs/{id}/assessment     | Upsert scores, compute total, and mark job as assessed                 | 200, 400, 404, 500  |
+| GET    | /jobs/{id}/notes          | Retrieve all sectioned notes for a job                                 | 200, 400, 404, 500  |
+| POST   | /jobs/{id}/notes          | Add a new sectioned note to a job                                      | 201, 400, 404, 500  |
+| PUT    | /jobs/{id}/notes/{noteId} | Update an existing note belonging to a job                             | 200, 400, 404, 500  |
+| DELETE | /jobs/{id}/notes/{noteId} | Delete a note belonging to a job                                       | 204, 400, 404, 500  |
 
 ## Assessment Scoring Rubric
 |  Category              |  Max Score   |  Description                                           |
