@@ -1,13 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import AssessmentModal, { type AssessmentScores } from './AssessmentModal'
+import type { AssessmentScores } from '../../types'
+import AssessmentModal from './AssessmentModal'
 
 describe('AssessmentModal', () => {
 	const defaultProps = {
 		company: 'Cloudflare',
 		jobTitle: 'Systems Engineer',
 		onSubmit: vi.fn(),
-		onCancel: vi.fn()
+		onCancel: vi.fn(),
 	}
 
 	it('renders all 7 rubric scoring inputs with initial values of 0', () => {
@@ -35,13 +36,13 @@ describe('AssessmentModal', () => {
 
 	it('populates fields when initialScores are supplied', () => {
 		const initialScores: AssessmentScores = {
-			career_alignment: 20,
-			experience_match: 15,
-			technical_alignment: 12,
-			compensation_score: 10,
-			work_arrangement_score: 8,
-			geographic_alignment: 4,
-			growth_value: 8
+		career_alignment: 20,
+		experience_match: 15,
+		technical_alignment: 12,
+		compensation_score: 10,
+		work_arrangement_score: 8,
+		geographic_alignment: 4,
+		growth_value: 8,
 		}
 
 		render(<AssessmentModal {...defaultProps} initialScores={initialScores} />)
@@ -50,6 +51,28 @@ describe('AssessmentModal', () => {
 		expect(careerInput.value).toBe('20')
 		expect(screen.getByText(/total: 77 \/ 100/i)).toBeDefined()
 		expect(screen.getByText(/apply - target/i)).toBeDefined()
+	})
+
+	it('hydrates inputs when initialScores resolve asynchronously after mount', () => {
+		const { rerender } = render(<AssessmentModal {...defaultProps} initialScores={null} />)
+
+		expect((screen.getByLabelText(/career alignment/i) as HTMLInputElement).value).toBe('0')
+
+		const fetchedScores: AssessmentScores = {
+		career_alignment: 24,
+		experience_match: 18,
+		technical_alignment: 14,
+		compensation_score: 12,
+		work_arrangement_score: 10,
+		geographic_alignment: 5,
+		growth_value: 9,
+		}
+
+		rerender(<AssessmentModal {...defaultProps} initialScores={fetchedScores} />)
+
+		expect((screen.getByLabelText(/career alignment/i) as HTMLInputElement).value).toBe('24')
+		expect(screen.getByText(/total: 92 \/ 100/i)).toBeDefined()
+		expect(screen.getByText(/apply - priority/i)).toBeDefined()
 	})
 
 	it('updates live score total and recommendation tier as inputs change', () => {
@@ -81,13 +104,13 @@ describe('AssessmentModal', () => {
 
 		expect(handleSubmit).toHaveBeenCalledTimes(1)
 		expect(handleSubmit).toHaveBeenCalledWith({
-			career_alignment: 22,
-			experience_match: 0,
-			technical_alignment: 14,
-			compensation_score: 0,
-			work_arrangement_score: 0,
-			geographic_alignment: 0,
-			growth_value: 0
+		career_alignment: 22,
+		experience_match: 0,
+		technical_alignment: 14,
+		compensation_score: 0,
+		work_arrangement_score: 0,
+		geographic_alignment: 0,
+		growth_value: 0,
 		})
 	})
 
