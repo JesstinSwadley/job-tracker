@@ -14,6 +14,7 @@ import JobList from './components/jobs/JobList'
 import UpdateJobForm from './components/jobs/UpdateJobForm'
 import DeleteJobModal from './components/jobs/DeleteJobModal'
 import AssessmentModal from './components/assessments/AssessmentModal'
+import JobNotesModal from './components/notes/JobNotesModal'
 
 const STATUS_TABS = ['All', ...JOB_STATUSES]
 const STAGE_TABS = ['All', ...JOB_STAGES]
@@ -24,6 +25,7 @@ const App = () => {
 	const [editingJob, setEditingJob] = useState<Job | null>(null)
 	const [deletingJob, setDeletingJob] = useState<Job | null>(null)
 	const [assessingJob, setAssessingJob] = useState<Job | null>(null)
+	const [notesJob, setNotesJob] = useState<Job | null>(null)
 	const [initialScores, setInitialScores] = useState<AssessmentScores | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
@@ -133,6 +135,12 @@ const App = () => {
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'An error occurred')
 		}
+	}
+
+	const handleNotesCountChange = (jobId: number, count: number) => {
+		setJobs((prev) => 
+			prev.map((j) => (j.id === jobId ? { ...j, notes_count: count}: j))
+		)
 	}
 
 	// Filter pipeline (Status + Stage + Search)
@@ -284,7 +292,7 @@ const App = () => {
 							<span className="text-slate-400 font-medium mr-1">Stage:</span>
 							{STAGE_TABS.map((tab) => {
 								const isActive = selectedStage === tab
-								
+
 								return (
 									<button
 										key={tab}
@@ -337,6 +345,7 @@ const App = () => {
 								onEdit={setEditingJob}
 								onDelete={setDeletingJob}
 								onAssess={handleOpenAssess}
+								onOpenNotes={setNotesJob}
 							/>
 						)}
 					</div>
@@ -363,6 +372,13 @@ const App = () => {
 					setInitialScores(null)
 				}}
 				/>
+			)}
+
+			{notesJob && (
+				<JobNotesModal 
+					job={notesJob}
+					onNotesCountChange={handleNotesCountChange}
+					onClose={() => setNotesJob(null)} />
 			)}
 		</main>
 	)

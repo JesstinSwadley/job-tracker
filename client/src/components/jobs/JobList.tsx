@@ -2,11 +2,11 @@ import AssessmentBadge from '../assessments/AssessmentBadge'
 import type { Job } from '../../types'
 
 interface JobListProps {
-jobs: Job[]
-onEdit?: (job: Job) => void
-onDelete?: (job: Job) => void
-onAssess?: (job: Job) => void
-onOpenNotes?: (job: Job) => void
+	jobs: Job[]
+	onEdit?: (job: Job) => void
+	onDelete?: (job: Job) => void
+	onAssess?: (job: Job) => void
+	onOpenNotes?: (job: Job) => void
 }
 
 function getStatusBadgeStyle(status: string): string {
