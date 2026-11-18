@@ -37,6 +37,8 @@ export const NOTE_SECTIONS = [
 	'Role',
 	'Interview',
 	'Compensation',
+	'Assessment',
+	'Resume',
 ] as const
 
 export type NoteSection = (typeof NOTE_SECTIONS)[number]

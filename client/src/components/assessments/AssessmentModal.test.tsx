@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
-import type { AssessmentScores } from '../../types'
-import AssessmentModal from './AssessmentModal'
+	import { fireEvent, render, screen } from '@testing-library/react'
+	import { describe, expect, it, vi } from 'vitest'
+	import type { AssessmentScores } from '../../types'
+	import AssessmentModal from './AssessmentModal'
 
-describe('AssessmentModal', () => {
+	describe('AssessmentModal', () => {
 	const defaultProps = {
 		company: 'Cloudflare',
 		jobTitle: 'Systems Engineer',
@@ -11,7 +11,7 @@ describe('AssessmentModal', () => {
 		onCancel: vi.fn(),
 	}
 
-	it('renders all 7 rubric scoring inputs with initial values of 0', () => {
+	it('renders all 7 rubric scoring inputs with benchmark guidance and initial values of 0', () => {
 		render(<AssessmentModal {...defaultProps} />)
 
 		expect(screen.getByText(/Cloudflare/)).toBeDefined()
@@ -32,17 +32,54 @@ describe('AssessmentModal', () => {
 		expect(workInput.value).toBe('0')
 		expect(geoInput.value).toBe('0')
 		expect(growthInput.value).toBe('0')
+
+		expect(screen.getByText(/0: off-track/i)).toBeDefined()
+		expect(screen.getByText(/0: major gaps/i)).toBeDefined()
+		expect(screen.getByText(/0: unfamiliar stack/i)).toBeDefined()
+	})
+
+	it('renders a loading state and disables saving until existing assessment finishes loading', () => {
+		const { rerender } = render(
+			<AssessmentModal {...defaultProps} loading={true} initialScores={null} />
+		)
+
+		expect(screen.getByText(/loading existing assessment/i)).toBeDefined()
+
+		const saveButton = screen.getByRole('button', { name: /save assessment/i }) as HTMLButtonElement
+		expect(saveButton.disabled).toBe(true)
+
+		const fetchedScores: AssessmentScores = {
+			career_alignment: 24,
+			experience_match: 18,
+			technical_alignment: 14,
+			compensation_score: 12,
+			work_arrangement_score: 10,
+			geographic_alignment: 5,
+			growth_value: 9,
+		}
+
+		rerender(
+			<AssessmentModal {...defaultProps} loading={false} initialScores={fetchedScores} />
+		)
+
+		expect(screen.queryByText(/loading existing assessment/i)).toBeNull()
+		expect((screen.getByLabelText(/career alignment/i) as HTMLInputElement).value).toBe('24')
+		expect(screen.getByText(/total: 92 \/ 100/i)).toBeDefined()
+		expect(screen.getByText(/apply - priority/i)).toBeDefined()
+		expect(
+			(screen.getByRole('button', { name: /save assessment/i }) as HTMLButtonElement).disabled
+		).toBe(false)
 	})
 
 	it('populates fields when initialScores are supplied', () => {
 		const initialScores: AssessmentScores = {
-		career_alignment: 20,
-		experience_match: 15,
-		technical_alignment: 12,
-		compensation_score: 10,
-		work_arrangement_score: 8,
-		geographic_alignment: 4,
-		growth_value: 8,
+			career_alignment: 20,
+			experience_match: 15,
+			technical_alignment: 12,
+			compensation_score: 10,
+			work_arrangement_score: 8,
+			geographic_alignment: 4,
+			growth_value: 8,
 		}
 
 		render(<AssessmentModal {...defaultProps} initialScores={initialScores} />)
@@ -59,13 +96,13 @@ describe('AssessmentModal', () => {
 		expect((screen.getByLabelText(/career alignment/i) as HTMLInputElement).value).toBe('0')
 
 		const fetchedScores: AssessmentScores = {
-		career_alignment: 24,
-		experience_match: 18,
-		technical_alignment: 14,
-		compensation_score: 12,
-		work_arrangement_score: 10,
-		geographic_alignment: 5,
-		growth_value: 9,
+			career_alignment: 24,
+			experience_match: 18,
+			technical_alignment: 14,
+			compensation_score: 12,
+			work_arrangement_score: 10,
+			geographic_alignment: 5,
+			growth_value: 9,
 		}
 
 		rerender(<AssessmentModal {...defaultProps} initialScores={fetchedScores} />)
@@ -93,25 +130,31 @@ describe('AssessmentModal', () => {
 		expect(screen.getByText(/apply - priority/i)).toBeDefined()
 	})
 
-	it('submits parsed integer scores matching the backend contract', () => {
+	it('submits parsed integer scores and trimmed assessment note', () => {
 		const handleSubmit = vi.fn()
 		render(<AssessmentModal {...defaultProps} onSubmit={handleSubmit} />)
 
 		fireEvent.change(screen.getByLabelText(/career alignment/i), { target: { value: '22' } })
 		fireEvent.change(screen.getByLabelText(/technical alignment/i), { target: { value: '14' } })
+		fireEvent.change(screen.getByLabelText(/assessment notes/i), {
+			target: { value: '  Strong Go/distributed systems fit.  ' },
+		})
 
 		fireEvent.click(screen.getByRole('button', { name: /save assessment/i }))
 
 		expect(handleSubmit).toHaveBeenCalledTimes(1)
-		expect(handleSubmit).toHaveBeenCalledWith({
-		career_alignment: 22,
-		experience_match: 0,
-		technical_alignment: 14,
-		compensation_score: 0,
-		work_arrangement_score: 0,
-		geographic_alignment: 0,
-		growth_value: 0,
-		})
+		expect(handleSubmit).toHaveBeenCalledWith(
+			{
+				career_alignment: 22,
+				experience_match: 0,
+				technical_alignment: 14,
+				compensation_score: 0,
+				work_arrangement_score: 0,
+				geographic_alignment: 0,
+				growth_value: 0,
+			},
+			'Strong Go/distributed systems fit.'
+		)
 	})
 
 	it('calls onCancel when the cancel button is clicked', () => {
