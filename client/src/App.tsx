@@ -7,8 +7,11 @@ import {
 	type Job,
 	type UpdateJobInput,
 } from './types'
+
 import { createJob, deleteJob, fetchJobs, updateJob } from './api/jobs'
 import { fetchAssessment, saveAssessment } from './api/assessments'
+import { createJobNote } from './api/notes'
+
 import CreateJobForm from './components/jobs/CreateJobForm'
 import JobList from './components/jobs/JobList'
 import UpdateJobForm from './components/jobs/UpdateJobForm'
@@ -19,12 +22,37 @@ import JobNotesModal from './components/notes/JobNotesModal'
 const STATUS_TABS = ['All', ...JOB_STATUSES]
 const STAGE_TABS = ['All', ...JOB_STAGES]
 
+function toUpdateInput(job: Job): UpdateJobInput {
+	return {
+		company: job.company,
+		title: job.title,
+		location: job.location,
+		work_arrangement: job.work_arrangement,
+		source: job.source,
+		application_platform: job.application_platform,
+		url: job.url,
+		stage: job.stage,
+		interview_round: job.interview_round,
+		status: job.status,
+		date_posted: job.date_posted,
+		date_found: job.date_found,
+		date_assessed: job.date_assessed,
+		date_applied: job.date_applied,
+		resume_url: job.resume_url,
+		cover_letter_url: job.cover_letter_url,
+		notes: job.notes,
+	}
+}
+
 const App = () => {
 	const [jobs, setJobs] = useState<Job[]>([])
 	const [loading, setLoading] = useState(true)
 	const [editingJob, setEditingJob] = useState<Job | null>(null)
 	const [deletingJob, setDeletingJob] = useState<Job | null>(null)
+
 	const [assessingJob, setAssessingJob] = useState<Job | null>(null)
+	const [loadingAssessment, setLoadingAssessment] = useState(false)
+
 	const [notesJob, setNotesJob] = useState<Job | null>(null)
 	const [initialScores, setInitialScores] = useState<AssessmentScores | null>(null)
 	const [error, setError] = useState<string | null>(null)
@@ -53,7 +81,7 @@ const App = () => {
 
 		try {
 			const newJob = await createJob(input)
-			setJobs((prev) => [newJob, ...prev])
+			setJobs((prev) => [{ ...newJob, notes_count: newJob.notes_count ?? 0 }, ...prev])
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'An error occurred')
 		}
@@ -66,10 +94,46 @@ const App = () => {
 
 		try {
 			const updatedJob = await updateJob(editingJob.id, input)
-			setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)))
+				setJobs(
+					(prev) => prev.map((j) => j.id === updatedJob.id ? {
+						...updatedJob,
+						assessment_total_score: 
+							updatedJob.assessment_total_score ?? j.assessment_total_score,
+						assessment_recommendation: 
+							updatedJob.assessment_recommendation || j.assessment_recommendation,
+						notes_count: 
+							updatedJob.notes_count ?? j.notes_count,
+					} : j)
+				)
 			setEditingJob(null)
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'An error occurred')
+		}
+	}
+
+	const handleQuickUpdate = async (job: Job, patch: Partial<Job>) => {
+		setError(null)
+		const optimisticJob: Job = { ...job, ...patch }
+
+		// Optimistically update card controls so selects/inputs feel instant
+		setJobs((prev) => prev.map((j) => (j.id === job.id ? optimisticJob : j)))
+
+		try {
+		const updatedJob = await updateJob(job.id, toUpdateInput(optimisticJob))
+			setJobs(
+				(prev) => prev.map((j) =>j.id === updatedJob.id ? {
+						...updatedJob,
+						assessment_total_score:
+						updatedJob.assessment_total_score ?? j.assessment_total_score,
+						assessment_recommendation:
+						updatedJob.assessment_recommendation || j.assessment_recommendation,
+						notes_count: updatedJob.notes_count ?? j.notes_count,
+					}: j
+				)
+			)
+		} catch (err) {
+			setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)))
+			setError(err instanceof Error ? err.message : 'Failed to update job')
 		}
 	}
 
@@ -89,44 +153,60 @@ const App = () => {
 		setError(null)
 		setAssessingJob(job)
 		setInitialScores(null)
+		setLoadingAssessment(true)
 
 		try {
 			const data = await fetchAssessment(job.id)
+
 			if (data) {
-			setInitialScores({
-				career_alignment: data.career_alignment,
-				experience_match: data.experience_match,
-				technical_alignment: data.technical_alignment,
-				compensation_score: data.compensation_score,
-				work_arrangement_score: data.work_arrangement_score,
-				geographic_alignment: data.geographic_alignment,
-				growth_value: data.growth_value,
-			})
+				setInitialScores({
+					career_alignment: data.career_alignment,
+					experience_match: data.experience_match,
+					technical_alignment: data.technical_alignment,
+					compensation_score: data.compensation_score,
+					work_arrangement_score: data.work_arrangement_score,
+					geographic_alignment: data.geographic_alignment,
+					growth_value: data.growth_value,
+				})
 			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to load assessment')
+		} finally {
+			setLoadingAssessment(false)
 		}
 	}
 
-	const handleSaveAssessment = async (scores: AssessmentScores) => {
+	const handleSaveAssessment = async (scores: AssessmentScores, note: string) => {
 		if (!assessingJob) return
 		setError(null)
 
 		try {
 		const saved = await saveAssessment(assessingJob.id, scores)
+		const trimmedNote = note.trim()
 		const today = new Date().toISOString().slice(0, 10)
+		
+		let addedNote = false
+
+		if (trimmedNote) {
+			await createJobNote(assessingJob.id, {
+				section: 'Assessment',
+				interview_round: 0,
+				content: trimmedNote,
+			})
+
+			addedNote = true
+		}
 
 		setJobs((prev) =>
-			prev.map((j) =>
-			j.id === assessingJob.id
-				? {
+			prev.map(
+				(j) => j.id === assessingJob.id ? {
 					...j,
 					stage: j.stage === 'Search' ? 'Assessment' : j.stage,
 					date_assessed: j.date_assessed || today,
 					assessment_total_score: saved.total_score,
 					assessment_recommendation: saved.recommendation,
-				}
-				: j
+					notes_count: (j.notes_count ?? 0) + (addedNote ? 1 : 0),
+				} : j
 			)
 		)
 
@@ -346,7 +426,7 @@ const App = () => {
 								onDelete={setDeletingJob}
 								onAssess={handleOpenAssess}
 								onOpenNotes={setNotesJob}
-							/>
+								onQuickUpdate={handleQuickUpdate} />
 						)}
 					</div>
 				</section>
@@ -355,22 +435,23 @@ const App = () => {
 			{/* Modals */}
 			{deletingJob && (
 				<DeleteJobModal
-				job={deletingJob}
-				onConfirm={handleDeleteJob}
-				onCancel={() => setDeletingJob(null)}
-				/>
+					job={deletingJob}
+					onConfirm={handleDeleteJob}
+					onCancel={() => setDeletingJob(null)} />
 			)}
 
 			{assessingJob && (
 				<AssessmentModal
-				company={assessingJob.company}
-				jobTitle={assessingJob.title}
-				initialScores={initialScores}
-				onSubmit={handleSaveAssessment}
-				onCancel={() => {
-					setAssessingJob(null)
-					setInitialScores(null)
-				}}
+					company={assessingJob.company}
+					jobTitle={assessingJob.title}
+					initialScores={initialScores}
+					loading={loadingAssessment}
+					onSubmit={handleSaveAssessment}
+					onCancel={() => {
+						setAssessingJob(null)
+						setInitialScores(null)
+						setLoadingAssessment(false)
+					}}
 				/>
 			)}
 

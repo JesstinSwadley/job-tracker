@@ -91,6 +91,42 @@ describe('JobList', () => {
 		expect(coverLetterLink.getAttribute('href')).toBe('https://docs.google.com/document/d/cl-1')
 	})
 
+	it('renders inline stage, round, and status controls when onQuickUpdate is provided', () => {
+		const handleQuickUpdate = vi.fn()
+		render(<JobList jobs={mockJobs} onQuickUpdate={handleQuickUpdate} />)
+
+		const stripeStageSelect = screen.getByLabelText(/stage for stripe/i) as HTMLSelectElement
+		expect(stripeStageSelect.value).toBe('Assessment')
+		expect(screen.queryByLabelText(/interview round for stripe/i)).toBeNull()
+
+		fireEvent.change(stripeStageSelect, { target: { value: 'Interviewing' } })
+		expect(handleQuickUpdate).toHaveBeenCalledWith(mockJobs[0], {
+			stage: 'Interviewing',
+			interview_round: 1,
+		})
+
+		const linearStageSelect = screen.getByLabelText(/stage for linear/i) as HTMLSelectElement
+		fireEvent.change(linearStageSelect, { target: { value: 'Offer' } })
+		expect(handleQuickUpdate).toHaveBeenCalledWith(mockJobs[1], {
+			stage: 'Offer',
+			interview_round: 0,
+		})
+
+		const linearRoundInput = screen.getByLabelText(/interview round for linear/i) as HTMLInputElement
+		expect(linearRoundInput.value).toBe('2')
+
+		fireEvent.change(linearRoundInput, { target: { value: '3' } })
+		expect(handleQuickUpdate).toHaveBeenCalledWith(mockJobs[1], {
+			interview_round: 3,
+		})
+
+		const stripeStatusSelect = screen.getByLabelText(/status for stripe/i) as HTMLSelectElement
+		fireEvent.change(stripeStatusSelect, { target: { value: 'Rejected' } })
+		expect(handleQuickUpdate).toHaveBeenCalledWith(mockJobs[0], {
+			status: 'Rejected',
+		})
+	})
+
 	it('renders Notes button with count and calls onOpenNotes when clicked', () => {
 		const handleOpenNotes = vi.fn()
 		render(<JobList jobs={mockJobs} onOpenNotes={handleOpenNotes} />)
@@ -148,5 +184,7 @@ describe('JobList', () => {
 		expect(screen.queryByRole('button', { name: /edit/i })).toBeNull()
 		expect(screen.queryByRole('button', { name: /delete/i })).toBeNull()
 		expect(screen.queryByRole('button', { name: /assess/i })).toBeNull()
+		expect(screen.queryByLabelText(/stage for stripe/i)).toBeNull()
+		expect(screen.queryByLabelText(/status for stripe/i)).toBeNull()
 	})
 })
